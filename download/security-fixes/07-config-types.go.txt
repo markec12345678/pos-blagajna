@@ -1,0 +1,66 @@
+// VARNOSTNI POPRAVEK #07: Dodatki za common/config/config.go
+//
+// Ta datoteka NE nadomešča celotnega config.go. Vsebuje le dodatne
+// tipe in polja, ki jih potrebujejo popravek 01 (CORS), 02 (setup)
+// in 04 (rate limiting).
+//
+// Navodila:
+// 1. Odpri common/config/config.go v urejevalniku.
+// 2. Dodaj naslednje tipe POD obstoječe tipom (npr. za AuthConfig):
+//
+//    type CorsConfig struct {
+//        AllowedOrigins   []string `mapstructure:"allowed_origins" yaml:"allowed_origins"`
+//        AllowedMethods   []string `mapstructure:"allowed_methods" yaml:"allowed_methods"`
+//        AllowedHeaders   []string `mapstructure:"allowed_headers" yaml:"allowed_headers"`
+//        AllowCredentials bool     `mapstructure:"allow_credentials" yaml:"allow_credentials"`
+//        MaxAgeSeconds    int      `mapstructure:"max_age_seconds" yaml:"max_age_seconds"`
+//    }
+//
+//    type RateLimitConfig struct {
+//        Enabled            bool `mapstructure:"enabled" yaml:"enabled"`
+//        LoginMaxRequests   int  `mapstructure:"login_max_requests" yaml:"login_max_requests"`
+//        LoginWindowSeconds int  `mapstructure:"login_window_seconds" yaml:"login_window_seconds"`
+//        LoginMaxFailures   int  `mapstructure:"login_max_failures" yaml:"login_max_failures"`
+//        LoginBlockMinutes  int  `mapstructure:"login_block_minutes" yaml:"login_block_minutes"`
+//    }
+//
+// 3. DODAJ ta polja v Config struct (za obstoječimi):
+//
+//    type Config struct {
+//        Databases     []Database    `mapstructure:"databases" yaml:"databases"`
+//        Auth          AuthConfig    `mapstructure:"auth" yaml:"auth"`
+//        Zitadel       ZitadelConfig `mapstructure:"zitadel" yaml:"zitadel"`
+//        Env           string        `mapstructure:"env" yaml:"env"`
+//        TimeZone      string        `mapstructure:"timezone" yaml:"timezone"`
+//        UploadsPath   string        `mapstructure:"uploads_path" yaml:"uploads_path"`
+//        ServeFrontEnd bool          `mapstructure:"serve_frontend" yaml:"serve_frontend"`
+//
+//        // VARNOSTNI POPRAVKI:
+//        Cors        CorsConfig    `mapstructure:"cors" yaml:"cors"`
+//        SetupToken  string        `mapstructure:"setup_token" yaml:"setup_token"`
+//        RateLimit   RateLimitConfig `mapstructure:"rate_limit" yaml:"rate_limit"`
+//    }
+//
+// Ta datoteka je zgolj za dokumentacijo — ne kopiraj je v repozitorij.
+// Spremembe moraš ročno vnesti v common/config/config.go.
+package config
+
+// CorsConfig definira CORS dovoljene izvore, metode in headerje.
+// Uporablja se v middlewares.AllowCorsWithConfig().
+type CorsConfig struct {
+	AllowedOrigins   []string `mapstructure:"allowed_origins" yaml:"allowed_origins"`
+	AllowedMethods   []string `mapstructure:"allowed_methods" yaml:"allowed_methods"`
+	AllowedHeaders   []string `mapstructure:"allowed_headers" yaml:"allowed_headers"`
+	AllowCredentials bool     `mapstructure:"allow_credentials" yaml:"allow_credentials"`
+	MaxAgeSeconds    int      `mapstructure:"max_age_seconds" yaml:"max_age_seconds"`
+}
+
+// RateLimitConfig drži nastavitve za omejevanje hitrosti na občutljivih
+// endpointih (login, register, password reset).
+type RateLimitConfig struct {
+	Enabled            bool `mapstructure:"enabled" yaml:"enabled"`
+	LoginMaxRequests   int  `mapstructure:"login_max_requests" yaml:"login_max_requests"`
+	LoginWindowSeconds int  `mapstructure:"login_window_seconds" yaml:"login_window_seconds"`
+	LoginMaxFailures   int  `mapstructure:"login_max_failures" yaml:"login_max_failures"`
+	LoginBlockMinutes  int  `mapstructure:"login_block_minutes" yaml:"login_block_minutes"`
+}

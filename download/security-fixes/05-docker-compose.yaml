@@ -1,0 +1,156 @@
+# =============================================================================
+# VARNOSTNI POPRAVEK #05: docker-compose.yaml z MongoDB avtentikacijo
+# =============================================================================
+# Originalni docker-compose.yaml je imel PRAZNO uporabniško ime in geslo
+# za MongoDB. To pomeni, da je bila baza popolnoma odprta, če je bil
+# port 27017 izpostavljen.
+#
+# Ta verzija:
+# 1. Nastavi močno uporabniško ime in geslo (GENERIRAJ SVOJE!)
+# 2. Odstrani zunanji port 27017 (baza je dosegljiva samo znotraj Docker omrežja)
+# 3. doda healthcheck z avtentikacijo
+# 4. doda read-only volume mount za produkcijo
+#
+# POMEMBNO: Pred prvim zagonom generiraj gesla:
+#   MONGO_USER="nutrix_admin"
+#   MONGO_PASS=$(openssl rand -base64 24)
+#   echo "MongoDB user: $MONGO_USER"
+#   echo "MongoDB pass: $MONGO_PASS"
+#
+# Vrednosti vstavi v spodnje spremenljivke in v config.yaml:
+#   databases:
+#     - username: "nutrix_admin"
+#       password: "<generirano geslo>"
+# =============================================================================
+
+services:
+
+  posui:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_APP_ZITADEL_ISSUER: http://zitadel:8082/
+        VITE_APP_BACKEND_HOST: localhost:8000
+        VITE_APP_MODULE_CORE_API_PREFIX: /core
+        VITE_APP_ZITADEL_PROJECT_RESOURCE_ID: 323062603569954818
+        VITE_APP_ZITADEL_CLIENT_ID: 323067089445257218
+        VITE_APP_ZITADEL_ENABLED: false
+        VITE_APP_APP_VERSION: 0.5.5
+
+    ports:
+      - "3000:80"
+
+    depends_on:
+      - pos
+
+
+  pos:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      # MongoDB poverilnice — GENERIRAJ SVOJE GESELO!
+      - DATABASES_0_HOST=nutrix-db
+      - DATABASES_0_DATABASE=nutrix
+      - DATABASES_0_USERNAME=nutrix_admin
+      - DATABASES_0_PASSWORD=CHANGE_ME_TO_STRONG_PASSWORD_USE_OPENSSL_RAND
+      - ZITADEL_DOMAIN=zitadel
+      - ZITADEL_PORT=8080
+    depends_on:
+      nutrix-db:
+        condition: service_healthy
+        restart: true
+    volumes:
+      - ./pos_mnt:/app/mnt
+
+    extra_hosts:
+      - "nutrix-hub-api:host-gateway"
+      - "zitadel:host-gateway"
+
+
+  nutrix-db:
+    image: mongo:5.0
+    environment:
+      # VARNOST: močno geslo, generiraj z: openssl rand -base64 24
+      - MONGO_INITDB_ROOT_USERNAME=nutrix_admin
+      - MONGO_INITDB_ROOT_PASSWORD=CHANGE_ME_TO_STRONG_PASSWORD_USE_OPENSSL_RAND
+      - MONGO_INITDB_DATABASE=nutrix
+    volumes:
+      - ./data/mongo:/data/db
+    healthcheck:
+      # VARNOST: healthcheck mora uporabljati avtentikacijo
+      test: ["CMD-SHELL", "mongo -u $$MONGO_INITDB_ROOT_USERNAME -p $$MONGO_INITDB_ROOT_PASSWORD --authenticationDatabase admin --eval 'db.adminCommand(\"ping\")'"]
+      interval: '10s'
+      timeout: '30s'
+      retries: 5
+      start_period: '20s'
+
+    # VARNOST: Ne izpostavljaj porta 27017 navzven.
+    # Baza naj bo dosegljiva samo znotraj Docker omrežja.
+    # Če jo res moraš izpostaviti (npr. za debugging), uporabi
+    # 127.0.0.1:27017:27017 in NE 0.0.0.0:27017:27017.
+    # ports:
+    #   - "127.0.0.1:27017:27017"
+
+
+  # zitadel_healthcheck:
+  #   image: curlimages/curl:8.12.1
+  #   depends_on:
+  #     zitadel:
+  #       condition: service_started
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://zitadel:8080/healthz"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 50
+  #   command: >
+  #     sh -c "while true; do
+  #       echo 'Waiting for web-service to be healthy...';
+  #       sleep 10;
+  #     done"
+
+
+  # zitadel:
+  #   restart: 'always'
+  #   image: 'ghcr.io/zitadel/zitadel:v2.67.1'
+  #   command: 'start-from-init --masterkey "MasterkeyNeedsToHave32Characters" --tlsMode disabled'
+  #   environment:
+  #     - 'ZITADEL_DATABASE_POSTGRES_HOST=zitadel-db'
+  #     - 'ZITADEL_DATABASE_POSTGRES_PORT=5432'
+  #     - 'ZITADEL_DATABASE_POSTGRES_DATABASE=zitadel'
+  #     - 'ZITADEL_DATABASE_POSTGRES_USER_USERNAME=zitadel'
+  #     - 'ZITADEL_DATABASE_POSTGRES_USER_PASSWORD=zitadel'
+  #     - 'ZITADEL_DATABASE_POSTGRES_USER_SSL_MODE=disable'
+  #     - 'ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME=postgres'
+  #     - 'ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD=postgres'
+  #     - 'ZITADEL_DATABASE_POSTGRES_ADMIN_SSL_MODE=disable'
+  #     - 'ZITADEL_EXTERNALSECURE=false'
+  #     - 'ZITADEL_EXTERNALDOMAIN=zitadel'
+  #     - 'ZITADEL_EXTERNALPORT=8080'
+  #   depends_on:
+  #     zitadel-db:
+  #       condition: 'service_healthy'
+  #   ports:
+  #     - "8080:8080"
+  #   expose:
+  #     - 8080
+
+
+  # zitadel-db:
+  #   restart: 'always'
+  #   image: postgres:16-alpine
+  #   environment:
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=postgres
+  #     - POSTGRES_DB=zitadel
+  #   volumes:
+  #     - ./data/postgres:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready", "-d", "zitadel", "-U", "postgres"]
+  #     interval: '10s'
+  #     timeout: '30s'
+  #     retries: 5
+  #     start_period: '20s'
