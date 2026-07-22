@@ -26,6 +26,7 @@ model User {
   stockMoves   StockMove[]
   expenses     Expense[]
   timeEntries  TimeEntry[]
+  auditLogs    AuditLog[]
 }
 
 // Kategorije izdelkov
@@ -269,4 +270,60 @@ model TimeEntry {
 
   @@index([userId])
   @@index([clockIn])
+}
+
+// Lokacije (za HubSync - več restavracij)
+model Location {
+  id          String   @id @default(cuid())
+  name        String   @unique // "Ljubljana Center", "Maribor"
+  code        String?  @unique // "LJU01", "MB02"
+  address     String?
+  phone       String?
+  email       String?
+  isMain      Boolean  @default(false) // glavna lokacija
+  isHub       Boolean  @default(false) // ali je ta lokacija hub (master)
+  hubUrl      String?  // URL glavnega hub-a (za podrejene lokacije)
+  hubToken    String?  // bearer token za avtentikacijo s hub-om
+  lastSyncAt  DateTime?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  syncLogs    SyncLog[]
+}
+
+// Sinhronizacijski log (za HubSync)
+model SyncLog {
+  id           String   @id @default(cuid())
+  locationId   String?
+  location     Location? @relation(fields: [locationId], references: [id])
+  direction    String   // "push" (pošiljamo na hub) ali "pull" (prejemanje od hub-a)
+  entityType   String   // "sale", "product", "stock_move", "expense"
+  entityId     String?  // ID entitete
+  status       String   // "success", "failed", "pending"
+  error        String?
+  payload      String?  // JSON snapshot
+  createdAt    DateTime @default(now())
+
+  @@index([locationId])
+  @@index([createdAt])
+}
+
+// Audit log - sledenje admin akcij
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  action      String   // "create", "update", "delete", "login", "logout", "refund", "storno"
+  entityType  String   // "user", "product", "sale", "settings", "stock_move", "expense", "reservation"
+  entityId    String?
+  description String   // human-readable opis
+  metadata    String?  // JSON z dodatnimi podatki
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([entityType])
 }
