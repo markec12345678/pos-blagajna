@@ -151,6 +151,11 @@ model Sale {
   createdAt     DateTime   @default(now())
   items         SaleItem[]
 
+  // Fiskalni podatki (Slovenija - FURS)
+  fursEOR       String?  // Enkratna Oznaka Računa (36 znakov)
+  fursZOI       String?  // Zaščitna Oznaka Izdajatelja (MD5 hash, 32 znakov)
+  fursVerifiedAt DateTime? // kdaj je bil račun potrjen pri FURS
+
   @@index([createdAt])
   @@index([cashierId])
   @@index([status])
