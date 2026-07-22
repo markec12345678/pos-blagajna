@@ -4,7 +4,7 @@ import { checkRateLimit, getClientIp, API_RATE_LIMIT, LOGIN_RATE_LIMIT } from '@
 
 // Endpointi z posebnimi omejitvami
 const STRICT_ENDPOINTS = ['/api/auth/login', '/api/auth/register', '/api/auth/2fa']
-const PUBLIC_ENDPOINTS = ['/api/public/', '/api/webhooks/', '/api/docs', '/api/health']
+const PUBLIC_ENDPOINTS = ['/api/public/', '/api/webhooks/', '/api/docs']
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
