@@ -278,6 +278,28 @@ POS Blagajna je popoln sistem za upravljanje prodaje z naslednjimi ključnimi la
 - API: POST /api/public/payment/verify — preveri status plačila
 - Env-based konfiguracija (STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY)
 - Podprto: kartice (Visa, Mastercard, Amex), Apple Pay, Google Pay
+- **StripeCheckoutButton** komponenta v cart dialog (/menu)
+  - Stripe brand barva (#635BFF)
+  - 3 statusi: creating → paying → success/failed
+  - Graceful fallback ko Stripe ni konfiguriran
+  - Avtomatsko praznjenje košarice po uspehu
+
+### 👥 CRM modul (upravljanje odnosov s kupci)
+- Nov Prisma model: CustomerInteraction (customerId, type, subject, description, userId)
+- Customer razširjen: segment (regular/vip/wholesale/blacklist), birthday
+- API: GET/POST /api/pos/customers/[id]/interactions
+- 6 tipov interakcij: call, email, visit, note, complaint, feedback
+- Audit log za vsako interakcijo
+- Loyalty točke, totalSpent, visits avtomatsko posodobljeni ob prodaji
+
+### ⚡ Performance optimizacije
+- DB indeksi na ključnih poljih:
+  - Sale: createdAt, cashierId, status, paymentMethod
+  - Product: categoryId, active, barcode
+  - CustomerInteraction: customerId, createdAt
+  - Reservation, TimeEntry, AuditLog, SyncLog indeksi
+- Pospeši poizvedbe za: zgodovina prodaje, iskanje izdelkov, CRM interakcije, audit log
+- Avto-refresh dashboard vsakih 60s (namesto polling 5s prej)
 
 ---
 
@@ -599,7 +621,7 @@ NODE_ENV="production"
 
 ## 📅 Fejlendar
 
-### ✅ Opravljeno (v1.6)
+### ✅ Opravljeno (v1.7)
 - [x] Avtentikacija z JWT cookie
 - [x] RBAC (admin/cashier/chef)
 - [x] Katalog izdelkov s kategorijami
@@ -634,14 +656,16 @@ NODE_ENV="production"
 - [x] QR loyalty sistem (generiranje + scan)
 - [x] Real-time dashboard z grafikoni (Chart.js)
 - [x] SMS obvestila (Twilio)
-- [x] Online plačila (Stripe)
+- [x] Online plačila (Stripe) z Checkout UI
+- [x] CRM modul (interakcije, segmenti, birthday)
+- [x] Performance optimizacije (DB indeksi)
 
-### 🔲 Načrtovano (v1.7+)
+### 🔲 Načrtovano (v1.8+)
 - [ ] Mobilna aplikacija (React Native)
 - [ ] Integracija z fiskalnim strojem (Slovenija)
 - [ ] MailChimp integracija za marketing
-- [ ] Online naročanje s plačilom (Stripe Checkout v /menu)
-- [ ] CRM modul za upravljanje odnosov s kupci
+- [ ] CRM dashboard z vizualizacijami
+- [ ] AI priporočila za up-selling
 
 ---
 
