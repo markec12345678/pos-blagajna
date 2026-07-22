@@ -132,14 +132,38 @@ POS Blagajna je popoln sistem za upravljanje prodaje z naslednjimi ključnimi la
 
 ### 🖨 ESC/POS tiskalnik podpora
 - Polna implementacija ESC/POS protokola (Epson, Star, Bixolon, Zjiang)
-- WebUSB integracija za direktno povezavo z USB tiskalniki
+- **3 načini povezave:**
+  - **USB (WebUSB)** — direktno povezovanje v Chrome/Edge
+  - **Mreža (TCP/IP)** — povezava preko mreže na port 9100
+  - **Brskalnik** — fallback na window.print()
+- Test povezave z latnostjo (samo za mrežne tiskalnike)
 - Podpora za 58mm (32 znakov) in 80mm (48 znakov) papir
 - Avtomatska transliteracija slovenskih šumnikov (č→c, š→s, ž→z)
-- 3-stopenjski fallback: USB tiskalnik → brskalnikovo tiskanje
 - API za generiranje byte array-a (POST /api/pos/print/receipt)
 - Testni izpis za preverjanje delovanja
 - Avtomatsko odpiranje predala za gotovino ob plačilu z gotovino
 - Beep po tiskanju računa
+- Nastavitve tiskalnika v admin panelu
+
+### 📱 PWA (Progressive Web App)
+- Namestitev na domači zaslon (Android, iOS, desktop)
+- **Offline mode** z service workerjem
+  - App shell (HTML, CSS, JS, fonts) — Cache First
+  - API zahteve — Network First z cache fallback
+  - Slike — Cache First z revalidacijo
+  - HTML navigacije — Network First z offline.html fallback
+- Offline indicator (rumeni badge ob izgubi povezave)
+- Avto-refresh ob povrnitvi povezave
+- PWA manifest z ikonami (192, 512, 512 maskable)
+- Shortcuts: Blagajna, Naročila, Admin
+- Theme color: emerald (#059669)
+
+### 📊 CSV izvoz poročil
+- Izvoz prodaje v CSV (Excel združljiv z BOM)
+- Izvoz stroškov v CSV s skupno vrstico
+- Filtriranje po datumskem obsegu (from, to)
+- Slovenski labeli (Gotovina/Kartica/Mobilno, Zaključen/Storniran)
+- Stolpci: račun, datum, čas, blagajnik, kupec, vrednost, popust, DDV, napitnina, skupaj, način plačila, plačano, vračilo, status, postavke
 
 ---
 
@@ -461,7 +485,7 @@ NODE_ENV="production"
 
 ## 📅 Fejlendar
 
-### ✅ Opravljeno (v1.1)
+### ✅ Opravljeno (v1.2)
 - [x] Avtentikacija z JWT cookie
 - [x] RBAC (admin/cashier/chef)
 - [x] Katalog izdelkov s kategorijami
@@ -482,16 +506,20 @@ NODE_ENV="production"
 - [x] Storno/refund računov
 - [x] Barkodni bralnik podpora
 - [x] Večjezikovnost (SL/EN/IT)
-- [x] ESC/POS tiskalnik (WebUSB)
+- [x] ESC/POS tiskalnik (USB + TCP/IP + brskalnik)
+- [x] Nastavitve tiskalnika v admin panelu
+- [x] PWA offline mode
+- [x] CSV izvoz poročil (prodaja, stroški)
 
-### 🔲 Načrtovano (v1.2+)
-- [ ] Nastavitve tiskalnika v admin panelu (IP, port, širina)
-- [ ] TCP/IP tiskalnik podpora (mrežni tiskalniki)
+### 🔲 Načrtovano (v1.3+)
 - [ ] HubSync (več lokacij)
-- [ ] Offline mode s PWA
 - [ ] MailChimp integracija za marketing
 - [ ] SMS obvestila za rezervacije
 - [ ] Mobilna aplikacija (React Native)
+- [ ] PDF izvoz poročil
+- [ ] Rezervacije miz
+- [ ] Spremljanje delavcev (time tracking)
+- [ ] Integracija z fiskalnim strojem (Slovenija)
 
 ---
 
