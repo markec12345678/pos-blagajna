@@ -254,6 +254,31 @@ POS Blagajna je popoln sistem za upravljanje prodaje z naslednjimi ključnimi la
 - Vrne: loyaltyPoints, totalSpent, visits
 - Uporaba: blagajnik skenira QR kodo kupca za hitro identifikacijo in pregled točk
 
+### 📊 Real-time dashboard z grafikoni
+- DashboardCharts komponenta z Chart.js
+- 7 metrik: skupna prodaja, računov, povprečni račun, napitnine, popusti, stroški, čisti dobiček
+- **Bar chart**: prodaja po urah
+- **Doughnut chart**: po načinu plačila (gotovina/kartica/mobilno)
+- **Horizontal bar chart**: top 10 izdelkov po količini
+- Avto-osvežitev vsakih 60 sekund
+- Range selector: Danes / Teden / Mesec / Vse
+- Loading skeletons in error states
+
+### 📱 SMS obvestila (Twilio)
+- Twilio integracija za SMS obvestila
+- Helperji:
+  - sendReservationSms — potrditev rezervacije stranki
+  - sendLowStockSms — opozorilo adminu o nizki zalogi
+- API: POST /api/pos/sms/test (testni SMS), POST /api/pos/sms/reservation
+- Env-based konfiguracija (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER)
+
+### 💳 Online plačila (Stripe)
+- Stripe integracija za online naročanje preko /menu
+- API: POST /api/public/payment/intent — ustvari PaymentIntent
+- API: POST /api/public/payment/verify — preveri status plačila
+- Env-based konfiguracija (STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY)
+- Podprto: kartice (Visa, Mastercard, Amex), Apple Pay, Google Pay
+
 ---
 
 ## 🛠 Tehnologije
@@ -574,7 +599,7 @@ NODE_ENV="production"
 
 ## 📅 Fejlendar
 
-### ✅ Opravljeno (v1.5)
+### ✅ Opravljeno (v1.6)
 - [x] Avtentikacija z JWT cookie
 - [x] RBAC (admin/cashier/chef)
 - [x] Katalog izdelkov s kategorijami
@@ -607,14 +632,16 @@ NODE_ENV="production"
 - [x] Email obvestila (SMTP z Nodemailer)
 - [x] Javni spletni meni (/menu) za stranke
 - [x] QR loyalty sistem (generiranje + scan)
+- [x] Real-time dashboard z grafikoni (Chart.js)
+- [x] SMS obvestila (Twilio)
+- [x] Online plačila (Stripe)
 
-### 🔲 Načrtovano (v1.6+)
-- [ ] SMS obvestila za rezervacije
+### 🔲 Načrtovano (v1.7+)
 - [ ] Mobilna aplikacija (React Native)
 - [ ] Integracija z fiskalnim strojem (Slovenija)
 - [ ] MailChimp integracija za marketing
-- [ ] Online plačila (Stripe, PayPal)
-- [ ] Real-time dashboard z grafikoni (Chart.js)
+- [ ] Online naročanje s plačilom (Stripe Checkout v /menu)
+- [ ] CRM modul za upravljanje odnosov s kupci
 
 ---
 
