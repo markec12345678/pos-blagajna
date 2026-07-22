@@ -28,6 +28,7 @@ import { usePosRealtime, notifyNewOrder, notifyOrderStatusChange, notifyNewSale,
 import { useI18n } from '@/i18n'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { getPrinter } from '@/lib/usb-printer'
+import { ClockButton } from './ClockButton'
 
 export default function POSPage() {
   const router = useRouter()
@@ -531,6 +532,7 @@ export default function POSPage() {
                 {new Date().toLocaleDateString(lang === 'sl' ? 'sl-SI' : lang === 'en' ? 'en-GB' : 'it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
               </div>
             </div>
+            {!isChef && user && <ClockButton userId={user.id} />}
             <LanguageSwitcher />
             <Button variant="ghost" size="sm" onClick={handleLogout} title={t.auth.logout}>
               <LogOut className="w-4 h-4" />

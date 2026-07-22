@@ -138,3 +138,25 @@ Stage Summary:
 - `cd /home/z/my-project && bun run lint` exits with code 0 (no warnings, no errors).
 - `bunx tsc --noEmit` reports 0 errors in any src/ file (all 99 remaining errors are pre-existing in unrelated gitignored folders: download/security-fixes/, pos/frontend/ Vue/PrimeVue project, examples/websocket/).
 - Component is ready to be rendered inside a route/page that wraps it with the app's Toaster (already mounted in src/app/layout.tsx) and an auth gate that only allows admin role (e.g. /admin route guarded by requireAuth(['admin'])).
+
+---
+Task ID: 8-apis
+Agent: General purpose
+Task: Build 6 API routes (reservations CRUD, time tracking, PDF report)
+
+Work Log:
+- Installed `pdfkit@0.19.1` and `@types/pdfkit@0.17.6` via `bun add`.
+- Created 6 API route files:
+  * /home/z/my-project/src/app/api/pos/reservations/route.ts (GET list with date/status/from/to filters, POST create with validation: customerName required, partySize>=1, datetime must be future; default duration=120, status='pending', createdBy from session; auth admin+cashier for POST, any logged-in for GET)
+  * /home/z/my-project/src/app/api/pos/reservations/[id]/route.ts (GET one with table, PATCH with status transition validation pending→confirmed→completed|cancelled|no_show, DELETE admin-only)
+  * /home/z/my-project/src/app/api/pos/time/clock/route.ts (POST clock in/out; rejects double clock-in, calculates totalMinutes on clock-out; auth any role)
+  * /home/z/my-project/src/app/api/pos/time/entries/route.ts (GET list; admin sees all, cashier/chef only own; filter by userId and from/to on clockIn; includes user relation with id/username/name/role)
+  * /home/z/my-project/src/app/api/pos/time/status/route.ts (GET current user clock status: clockedIn, currentEntry, todayMinutes, weekMinutes)
+  * /home/z/my-project/src/app/api/pos/reports/pdf/route.ts (GET generates A4 landscape PDF with pdfkit; Slovenian labels and EUR/date formatting; sections: header with restaurant info, summary cards (8), sales by hour, top 10 products, by payment method, expenses by category; page numbers + footer on every page; auth admin only; returns application/pdf attachment)
+- Auth pattern uses `requireAuth(roles?)` returning SessionUser or `{error, status, message}`.
+- Buffer→Uint8Array conversion used so NextResponse accepts the PDF body as BodyInit.
+
+Stage Summary:
+- `cd /home/z/my-project && bun run lint` exits cleanly (no warnings, no errors).
+- `bunx tsc --noEmit` reports 0 errors in any of the 6 new files (only pre-existing errors in unrelated gitignored folders: pos/frontend/, skills/, examples/, src/components/pos/POSPage.tsx, PrinterSettings.tsx, i18n locales, print/test/route.ts).
+- All 6 endpoints ready to be consumed by frontend (reservations UI, time-clock widget, admin PDF export button).

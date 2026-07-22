@@ -50,6 +50,8 @@ import {
   StickyNote,
   Tag,
   Layers,
+  Calendar,
+  Clock,
 } from 'lucide-react'
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -118,6 +120,9 @@ import {
   reportRangeLabels,
 } from './types'
 import { PrinterSettings } from './PrinterSettings'
+import { ReservationsTab } from './ReservationsTab'
+import { TimeEntriesTab } from './TimeEntriesTab'
+import { PdfExportButton } from './PdfExportButton'
 
 // =============================================================================
 // Pomožne konstante
@@ -128,9 +133,11 @@ const TABS = [
   { value: 'uporabniki', label: 'Uporabniki', icon: UsersIcon },
   { value: 'izdelki', label: 'Izdelki', icon: Package },
   { value: 'mize', label: 'Mize', icon: Table2 },
+  { value: 'rezervacije', label: 'Rezervacije', icon: Calendar },
   { value: 'kupci', label: 'Kupci', icon: UserCircle2 },
   { value: 'skladisce', label: 'Skladišče', icon: Boxes },
   { value: 'stroski', label: 'Stroški', icon: Receipt },
+  { value: 'delavci', label: 'Delavci', icon: Clock },
   { value: 'nastavitve', label: 'Nastavitve', icon: SettingsIcon },
 ] as const
 
@@ -231,6 +238,9 @@ export default function AdminPanel() {
           <TabsContent value="mize" className="mt-0">
             <TablesTab />
           </TabsContent>
+          <TabsContent value="rezervacije" className="mt-0">
+            <ReservationsTab />
+          </TabsContent>
           <TabsContent value="kupci" className="mt-0">
             <CustomersTab />
           </TabsContent>
@@ -239,6 +249,9 @@ export default function AdminPanel() {
           </TabsContent>
           <TabsContent value="stroski" className="mt-0">
             <ExpensesTab />
+          </TabsContent>
+          <TabsContent value="delavci" className="mt-0">
+            <TimeEntriesTab />
           </TabsContent>
           <TabsContent value="nastavitve" className="mt-0">
             <SettingsTab />
@@ -350,7 +363,7 @@ function DashboardTab() {
             Povzetek prodaje, stroškov in dobička za izbrano obdobje.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Select value={range} onValueChange={(v) => setRange(v as ReportRange)}>
             <SelectTrigger className="h-9 w-32" size="sm">
               <SelectValue />
@@ -368,6 +381,19 @@ function DashboardTab() {
           </Button>
         </div>
       </div>
+
+      {/* PDF izvoz */}
+      <Card>
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div>
+              <div className="text-sm font-medium">Izvoz poročila v PDF</div>
+              <div className="text-xs text-slate-500">Za računovodstvo in arhiviranje</div>
+            </div>
+            <PdfExportButton defaultRange={range} />
+          </div>
+        </CardContent>
+      </Card>
 
       {error ? (
         <ErrorState message={error} />

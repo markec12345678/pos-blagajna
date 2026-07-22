@@ -25,6 +25,7 @@ model User {
   orders       Order[]
   stockMoves   StockMove[]
   expenses     Expense[]
+  timeEntries  TimeEntry[]
 }
 
 // Kategorije izdelkov
@@ -73,7 +74,8 @@ model Table {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  orders     Order[]
+  orders        Order[]
+  reservations  Reservation[]
 }
 
 // Naročilo (order) - ločeno od prodaje (sale)
@@ -230,4 +232,41 @@ model Settings {
   printerOpenDrawer Boolean @default(true)
 
   updatedAt       DateTime @updatedAt
+}
+
+// Rezervacije miz
+model Reservation {
+  id            String   @id @default(cuid())
+  tableId       String?
+  table         Table?   @relation(fields: [tableId], references: [id])
+  customerName  String
+  customerPhone String?
+  customerEmail String?
+  partySize     Int      @default(2)
+  datetime      DateTime // kdaj je rezervirana
+  duration      Int      @default(120) // v minutah
+  status        String   @default("pending") // pending, confirmed, cancelled, completed, no_show
+  note          String?
+  createdBy     String? // userId
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([datetime])
+  @@index([status])
+}
+
+// Sledenje delavcev (time tracking)
+model TimeEntry {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  clockIn       DateTime
+  clockOut      DateTime?
+  totalMinutes  Int? // izracunano ob clock-out
+  note          String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([clockIn])
 }

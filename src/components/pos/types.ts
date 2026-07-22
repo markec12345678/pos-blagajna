@@ -80,6 +80,14 @@ export const tableStatusConfig: Record<string, { label: string; className: strin
   dirty: { label: 'Umazana', className: 'bg-slate-200 text-slate-700 border-slate-300' },
 }
 
+export const reservationStatusConfig: Record<ReservationStatus, { label: string; className: string }> = {
+  pending: { label: 'Čaka', className: 'bg-amber-100 text-amber-800 border-amber-300' },
+  confirmed: { label: 'Potrjena', className: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+  cancelled: { label: 'Preklicana', className: 'bg-red-100 text-red-800 border-red-300' },
+  completed: { label: 'Zaključena', className: 'bg-slate-100 text-slate-800 border-slate-300' },
+  no_show: { label: 'Ni se poglobil', className: 'bg-orange-100 text-orange-800 border-orange-300' },
+}
+
 // --- Kupci ------------------------------------------------------------------
 
 export interface Customer {
@@ -194,6 +202,43 @@ export interface Reports {
   topProducts?: ReportTopProduct[]
   totalExpenses: number
   netProfit: number
+}
+
+export type ReservationStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show'
+
+export interface Reservation {
+  id: string
+  tableId?: string | null
+  table?: Table | null
+  customerName: string
+  customerPhone?: string | null
+  customerEmail?: string | null
+  partySize: number
+  datetime: string
+  duration: number
+  status: ReservationStatus
+  note?: string | null
+  createdBy?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface TimeEntry {
+  id: string
+  userId: string
+  user?: { id: string; username: string; name: string; role: string } | null
+  clockIn: string
+  clockOut?: string | null
+  totalMinutes?: number | null
+  note?: string | null
+  createdAt: string
+}
+
+export interface TimeStatus {
+  clockedIn: boolean
+  currentEntry?: TimeEntry | null
+  todayMinutes: number
+  weekMinutes: number
 }
 
 export const reportRangeLabels: Record<ReportRange, string> = {
