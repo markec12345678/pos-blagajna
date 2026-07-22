@@ -53,7 +53,7 @@ server.log
 # Skills directory
 /skills/
 # POS specific
-pos/
+/pos/
 db/*.db
 db/*.db-journal
 *.log
