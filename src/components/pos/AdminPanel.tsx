@@ -130,6 +130,8 @@ import { AuditLogTab } from './AuditLogTab'
 import { EmailSettingsTab } from './EmailSettingsTab'
 import { DashboardCharts } from './DashboardCharts'
 import { CrmDashboard } from './CrmDashboard'
+import { ShiftsTab } from './ShiftsTab'
+import { SalesForecast } from './SalesForecast'
 
 // =============================================================================
 // Pomožne konstante
@@ -146,6 +148,8 @@ const TABS = [
   { value: 'skladisce', label: 'Skladišče', icon: Boxes },
   { value: 'stroski', label: 'Stroški', icon: Receipt },
   { value: 'delavci', label: 'Delavci', icon: Clock },
+  { value: 'urnik', label: 'Urnik', icon: Calendar },
+  { value: 'napoved', label: 'Napoved', icon: TrendingUp },
   { value: 'hubsync', label: 'HubSync', icon: Network },
   { value: 'audit', label: 'Audit', icon: History },
   { value: 'email', label: 'Email', icon: Mail },
@@ -267,6 +271,12 @@ export default function AdminPanel() {
           </TabsContent>
           <TabsContent value="delavci" className="mt-0">
             <TimeEntriesTab />
+          </TabsContent>
+          <TabsContent value="urnik" className="mt-0">
+            <ShiftsTab />
+          </TabsContent>
+          <TabsContent value="napoved" className="mt-0">
+            <SalesForecast />
           </TabsContent>
           <TabsContent value="hubsync" className="mt-0">
             <HubSyncTab />

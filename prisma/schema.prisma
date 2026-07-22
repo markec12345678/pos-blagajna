@@ -27,6 +27,7 @@ model User {
   expenses     Expense[]
   timeEntries  TimeEntry[]
   auditLogs    AuditLog[]
+  shifts       Shift[]
 }
 
 // Kategorije izdelkov
@@ -62,6 +63,7 @@ model Product {
   saleItems   SaleItem[]
   orderItems  OrderItem[]
   stockMoves  StockMove[]
+  modifiers   ProductModifier[]
 
   @@index([categoryId])
   @@index([active])
@@ -354,4 +356,39 @@ model AuditLog {
   @@index([userId])
   @@index([createdAt])
   @@index([entityType])
+}
+
+// Urniki zaposlenih (shift scheduling)
+model Shift {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  startTime   DateTime
+  endTime     DateTime?
+  breakMinutes Int    @default(30)
+  role        String   @default("cashier") // cashier, chef, admin
+  status      String   @default("scheduled") // scheduled, started, completed, cancelled, no_show
+  note        String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([startTime])
+  @@index([status])
+}
+
+// Produktni dodatki/modifikatorji (extra sir, brez čebule, itd.)
+model ProductModifier {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name        String   // "Extra sir", "Brez čebule", "Velika porcija"
+  priceDelta  Float    @default(0) // pozitivno = doplačilo, negativno = popust
+  type        String   @default("addon") // addon, removal, size, custom
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([productId])
 }
