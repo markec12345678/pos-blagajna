@@ -1,0 +1,129 @@
+# ============================================
+# POS Blagajna — Produksijski Docker Compose
+# Zaženi z: docker compose -f docker-compose.prod.yml up -d
+# ============================================
+
+services:
+  # --- Glavna aplikacija (Next.js) ---
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: pos-app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://pos:${DB_PASSWORD:-pospass}@db:5432/pos?schema=public
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+      # Stripe
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY:-}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
+      # SMTP
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_FROM=${SMTP_FROM:-pos@restavracija.si}
+      # Twilio
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-}
+      - TWILIO_FROM_NUMBER=${TWILIO_FROM_NUMBER:-}
+      # FURS
+      - FURS_TAX_NUMBER=${FURS_TAX_NUMBER:-}
+      - FURS_PREMISE_ID=${FURS_PREMISE_ID:-}
+      - FURS_DEVICE_ID=${FURS_DEVICE_ID:-}
+      # MailChimp
+      - MAILCHIMP_API_KEY=${MAILCHIMP_API_KEY:-}
+      - MAILCHIMP_SERVER_PREFIX=${MAILCHIMP_SERVER_PREFIX:-}
+      - MAILCHIMP_LIST_ID=${MAILCHIMP_LIST_ID:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - app-data:/app/data
+      - app-uploads:/app/mnt/public
+    networks:
+      - pos-network
+
+  # --- Podatkovna baza (PostgreSQL za produkcijo) ---
+  db:
+    image: postgres:16-alpine
+    container_name: pos-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=pos
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-pospass}
+      - POSTGRES_DB=pos
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pos -d pos"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - pos-network
+
+  # --- WebSocket mini-service ---
+  realtime:
+    build:
+      context: ./mini-services/pos-realtime
+      dockerfile: Dockerfile
+    container_name: pos-realtime
+    restart: unless-stopped
+    ports:
+      - "${WS_PORT:-3003}:3003"
+    networks:
+      - pos-network
+
+  # --- Nginx reverse proxy ---
+  nginx:
+    image: nginx:alpine
+    container_name: pos-nginx
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - app
+      - realtime
+    networks:
+      - pos-network
+
+  # --- Redis za rate limiting in caching (produkcija) ---
+  redis:
+    image: redis:7-alpine
+    container_name: pos-redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - pos-network
+
+volumes:
+  db-data:
+  app-data:
+  app-uploads:
+  redis-data:
+
+networks:
+  pos-network:
+    driver: bridge

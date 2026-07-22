@@ -1,8 +1,8 @@
-// API: POST /api/pos/furs/verify - davčno potrdi račun (FURS)
+// API: POST /api/pos/furs/verify - davčno potrdi račun (SI: FURS, HR: CIS)
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth } from '@/lib/auth'
-import { verifyInvoiceWithFurs, getFursConfig, isFursConfigured } from '@/lib/furs'
+import { verifyInvoice, getFiscalConfig, isFiscalConfigured, getFiscalLabels } from '@/lib/furs'
 import { logAudit } from '@/lib/audit'
 
 export async function POST(req: NextRequest) {
@@ -25,27 +25,32 @@ export async function POST(req: NextRequest) {
 
     // Če je že potrjen, vrni obstoječe podatke
     if (sale.fursEOR && sale.fursZOI) {
+      const config = getFiscalConfig()
+      const labels = getFiscalLabels(config?.country || 'NONE')
       return NextResponse.json({
         alreadyVerified: true,
         eor: sale.fursEOR,
         zoi: sale.fursZOI,
         verifiedAt: sale.fursVerifiedAt,
+        labels,
+        country: config?.country || 'NONE',
       })
     }
 
-    if (!isFursConfigured()) {
+    if (!isFiscalConfigured()) {
       return NextResponse.json({
-        error: 'FURS ni konfiguriran. Nastavi FURS_TAX_NUMBER, FURS_PREMISE_ID, FURS_DEVICE_ID v .env',
+        error: 'Fiskalizacija ni konfigurirana. Nastavi FISCAL_COUNTRY (SI ali HR), FISCAL_TAX_NUMBER, FISCAL_PREMISE_ID, FISCAL_DEVICE_ID v .env',
       }, { status: 400 })
     }
 
-    const config = getFursConfig()!
+    const config = getFiscalConfig()!
+    const labels = getFiscalLabels(config.country)
 
-    // Generiraj zaporedno številko (na podlagi števila računov na tej napravi)
+    // Generiraj zaporedno številko
     const sequence = await db.sale.count() + 1
 
-    // Potrdi pri FURS (simulacija)
-    const result = await verifyInvoiceWithFurs(
+    // Potrdi račun (simulacija FURS/CIS SOAP call)
+    const result = await verifyInvoice(
       config,
       sale.receiptNo,
       sale.createdAt,
@@ -65,10 +70,16 @@ export async function POST(req: NextRequest) {
     await logAudit({
       userId: auth.id,
       action: 'create',
-      entityType: 'furs',
+      entityType: 'fiscal',
       entityId: saleId,
-      description: `FURS potrjen račun ${sale.receiptNo} — EOR: ${result.eor.substring(0, 13)}...`,
-      metadata: { receiptNo: sale.receiptNo, eor: result.eor, sequence },
+      description: `Fiskalizacija (${labels.countryName}): ${sale.receiptNo} — ${labels.eorLabel}: ${result.eor.substring(0, 13)}...`,
+      metadata: {
+        receiptNo: sale.receiptNo,
+        eor: result.eor,
+        zoi: result.zoi,
+        country: config.country,
+        sequence,
+      },
     })
 
     return NextResponse.json({
@@ -76,7 +87,9 @@ export async function POST(req: NextRequest) {
       eor: result.eor,
       zoi: result.zoi,
       verifiedAt: result.verifiedAt,
-      qrData: `${config.taxNumber}${result.zoi}`,
+      qrData: result.qrData,
+      country: config.country,
+      labels,
     })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })

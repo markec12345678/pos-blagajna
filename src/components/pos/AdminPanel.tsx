@@ -55,6 +55,8 @@ import {
   Network,
   History,
   CreditCard,
+  FileText,
+  Landmark,
 } from 'lucide-react'
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -134,6 +136,8 @@ import { CrmDashboard } from './CrmDashboard'
 import { ShiftsTab } from './ShiftsTab'
 import { SalesForecast } from './SalesForecast'
 import { BillingTab } from './BillingTab'
+import { SwaggerUI } from './SwaggerUI'
+import { FiscalTab } from './FiscalTab'
 
 // =============================================================================
 // Pomožne konstante
@@ -154,6 +158,8 @@ const TABS = [
   { value: 'napoved', label: 'Napoved', icon: TrendingUp },
   { value: 'hubsync', label: 'HubSync', icon: Network },
   { value: 'billing', label: 'Billing', icon: CreditCard },
+  { value: 'fiskal', label: 'Fiskal', icon: Landmark },
+  { value: 'api', label: 'API Docs', icon: FileText },
   { value: 'audit', label: 'Audit', icon: History },
   { value: 'email', label: 'Email', icon: Mail },
   { value: 'nastavitve', label: 'Nastavitve', icon: SettingsIcon },
@@ -286,6 +292,12 @@ export default function AdminPanel() {
           </TabsContent>
           <TabsContent value="billing" className="mt-0">
             <BillingTab />
+          </TabsContent>
+          <TabsContent value="fiskal" className="mt-0">
+            <FiscalTab />
+          </TabsContent>
+          <TabsContent value="api" className="mt-0">
+            <SwaggerUI />
           </TabsContent>
           <TabsContent value="audit" className="mt-0">
             <AuditLogTab />
