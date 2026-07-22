@@ -122,6 +122,25 @@ POS Blagajna je popoln sistem za upravljanje prodaje z naslednjimi ključnimi la
 - Session veljaven 7 dni
 - Avtomatska preusmeritev na login
 
+### 🌍 Večjezikovnost (i18n)
+- 3 jeziki: **slovenščina** (privzeti), **angleščina**, **italijanščina**
+- Samodejna detekcija jezika brskalnika
+- Language switcher z zastavami (🇸🇮 🇬🇧 🇮🇹) v headerju in na login strani
+- 200+ prevedenih ključev za vse dele aplikacije
+- Persistenca izbire v localStorage
+- Datumski formati prilagojeni jeziku (sl-SI, en-GB, it-IT)
+
+### 🖨 ESC/POS tiskalnik podpora
+- Polna implementacija ESC/POS protokola (Epson, Star, Bixolon, Zjiang)
+- WebUSB integracija za direktno povezavo z USB tiskalniki
+- Podpora za 58mm (32 znakov) in 80mm (48 znakov) papir
+- Avtomatska transliteracija slovenskih šumnikov (č→c, š→s, ž→z)
+- 3-stopenjski fallback: USB tiskalnik → brskalnikovo tiskanje
+- API za generiranje byte array-a (POST /api/pos/print/receipt)
+- Testni izpis za preverjanje delovanja
+- Avtomatsko odpiranje predala za gotovino ob plačilu z gotovino
+- Beep po tiskanju računa
+
 ---
 
 ## 🛠 Tehnologije
@@ -442,13 +461,13 @@ NODE_ENV="production"
 
 ## 📅 Fejlendar
 
-### ✅ Opravljeno (v1.0)
+### ✅ Opravljeno (v1.1)
 - [x] Avtentikacija z JWT cookie
 - [x] RBAC (admin/cashier/chef)
 - [x] Katalog izdelkov s kategorijami
 - [x] Blagajna s checkout in DDV
 - [x] Naročila z stanji
-- [x] Kitchen Display System (KDS)
+- [x] Kitchen Display System (KDS) z WebSocket real-time
 - [x] Mize z območji
 - [x] Skladišče (sprejem, odpisi)
 - [x] Stroški
@@ -459,13 +478,15 @@ NODE_ENV="production"
 - [x] Popusti
 - [x] Račun z izpisom in tiskanjem
 - [x] Zgodovina prodaje
+- [x] WebSocket za real-time KDS
+- [x] Storno/refund računov
+- [x] Barkodni bralnik podpora
+- [x] Večjezikovnost (SL/EN/IT)
+- [x] ESC/POS tiskalnik (WebUSB)
 
-### 🔲 Načrtovano (v1.1+)
-- [ ] WebSocket za real-time KDS (trenutno polling 5s)
-- [ ] Storno/refund računov
-- [ ] Barkodni bralnik podpora
-- [ ] ESC/POS toplotni tiskalnik integracija
-- [ ] Večjezikovnost (i18n — angleščina, italijanščina)
+### 🔲 Načrtovano (v1.2+)
+- [ ] Nastavitve tiskalnika v admin panelu (IP, port, širina)
+- [ ] TCP/IP tiskalnik podpora (mrežni tiskalniki)
 - [ ] HubSync (več lokacij)
 - [ ] Offline mode s PWA
 - [ ] MailChimp integracija za marketing
