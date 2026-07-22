@@ -8,6 +8,36 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Multi-tenant — organizacije (za SaaS model)
+model Tenant {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  code        String?  @unique
+  plan        String   @default("starter") // starter, pro, enterprise
+  maxUsers    Int      @default(5)
+  maxLocations Int     @default(1)
+  active      Boolean  @default(true)
+  trialEndsAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       UserTenant[]
+}
+
+// Povezava User <-> Tenant (many-to-many)
+model UserTenant {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  role      String   @default("cashier") // admin, cashier, chef
+  createdAt DateTime @default(now())
+
+  @@unique([userId, tenantId])
+  @@index([tenantId])
+}
+
 // Uporabniki z vlogami (RBAC)
 model User {
   id           String   @id @default(cuid())
@@ -33,6 +63,9 @@ model User {
   twoFactorSecret   String?  // TOTP secret (base32)
   twoFactorEnabled  Boolean  @default(false)
   twoFactorBackupCodes String? // JSON array of backup codes
+
+  // Multi-tenant
+  tenants     UserTenant[]
 }
 
 // Kategorije izdelkov
