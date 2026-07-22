@@ -301,6 +301,36 @@ POS Blagajna je popoln sistem za upravljanje prodaje z naslednjimi ključnimi la
 - Pospeši poizvedbe za: zgodovina prodaje, iskanje izdelkov, CRM interakcije, audit log
 - Avto-refresh dashboard vsakih 60s (namesto polling 5s prej)
 
+### 📊 CRM Dashboard z vizualizacijami
+- **CrmDashboard** komponenta v AdminPanel (14. tab)
+- 4 metrike: kupcev skupno, skupna poraba, lojalne točke, rojni dnevi ta mesec
+- Segmenti kupcev (regular, VIP, veleprodaja, črna lista) z barvno kodiranjem
+- Top 10 kupcev po porabi z rangiranjem
+- Zadnje interakcije (klic, email, obisk, beležka, pritožba, feedback)
+- Interakcije po tipu z ikonami in števci
+- Rodni dnevi ta mesec z gumbom za čestitko
+- Novi kupci v zadnjih 30 dneh
+- API: GET /api/pos/crm/stats
+
+### 🤖 AI priporočila za up-selling
+- Pametni predlogi izdelkov ob prodaji (na podlagi košarice)
+- Algoritem "pogosto kupljeno skupaj":
+  - Kava + sladica (confidence 0.85)
+  - Burger + pijača (confidence 0.75)
+  - Hrana + pijača (confidence 0.70)
+- Časovna prilagoditev (jutranja kava, kosilo, večerja, noč)
+- VIP priporočila za premium izdelke
+- Potencialni upsell znesek
+- API: POST /api/pos/ai/recommend
+
+### 📧 Email kampanje (newsletter)
+- Pošiljanje personaliziranih emailov vsem kupcem ali po segmentih
+- Personalizacija z {ime} in {name} placeholderji
+- Testni email pred pošiljanjem kampanje
+- Rate limiting (50ms delay med pošiljanji)
+- Audit log za vsako kampanjo
+- API: POST /api/pos/campaigns
+
 ---
 
 ## 🛠 Tehnologije
@@ -621,7 +651,7 @@ NODE_ENV="production"
 
 ## 📅 Fejlendar
 
-### ✅ Opravljeno (v1.7)
+### ✅ Opravljeno (v1.8)
 - [x] Avtentikacija z JWT cookie
 - [x] RBAC (admin/cashier/chef)
 - [x] Katalog izdelkov s kategorijami
@@ -659,13 +689,16 @@ NODE_ENV="production"
 - [x] Online plačila (Stripe) z Checkout UI
 - [x] CRM modul (interakcije, segmenti, birthday)
 - [x] Performance optimizacije (DB indeksi)
+- [x] CRM Dashboard z vizualizacijami (segmenti, top kupci, interakcije)
+- [x] AI priporočila za up-selling (pogosto kupljeno skupaj)
+- [x] Email kampanje (newsletter sistem)
 
-### 🔲 Načrtovano (v1.8+)
+### 🔲 Načrtovano (v1.9+)
 - [ ] Mobilna aplikacija (React Native)
 - [ ] Integracija z fiskalnim strojem (Slovenija)
 - [ ] MailChimp integracija za marketing
-- [ ] CRM dashboard z vizualizacijami
-- [ ] AI priporočila za up-selling
+- [ ] Napredna AI analitika (napoved prodaje)
+- [ ] Spletni modul za zaposlene (urniki)
 
 ---
 
