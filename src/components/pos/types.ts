@@ -241,6 +241,80 @@ export interface TimeStatus {
   weekMinutes: number
 }
 
+// --- HubSync ---
+
+export interface Location {
+  id: string
+  name: string
+  code?: string | null
+  address?: string | null
+  phone?: string | null
+  email?: string | null
+  isMain: boolean
+  isHub: boolean
+  hubUrl?: string | null
+  hubToken?: string | null
+  lastSyncAt?: string | null
+  active: boolean
+  createdAt: string
+  updatedAt: string
+  _count?: { syncLogs: number }
+}
+
+export interface SyncLog {
+  id: string
+  locationId?: string | null
+  location?: { id: string; name: string; code?: string | null } | null
+  direction: 'push' | 'pull'
+  entityType: string
+  entityId?: string | null
+  status: 'success' | 'failed' | 'pending'
+  error?: string | null
+  payload?: string | null
+  createdAt: string
+}
+
+export interface HubSyncStatus {
+  location: Location | null
+  lastSyncAt: string | null
+  syncLogs: SyncLog[]
+  pendingCount: number
+}
+
+// --- Audit log ---
+
+export interface AuditLog {
+  id: string
+  userId: string
+  user?: { id: string; username: string; name: string; role: string } | null
+  action: string
+  entityType: string
+  entityId?: string | null
+  description: string
+  metadata?: string | null
+  ipAddress?: string | null
+  userAgent?: string | null
+  createdAt: string
+}
+
+export const auditActionLabels: Record<string, string> = {
+  create: 'Ustvarjeno',
+  update: 'Posodobljeno',
+  delete: 'Izbrisano',
+  login: 'Prijava',
+  logout: 'Odjava',
+  refund: 'Storno',
+  storno: 'Storno',
+  sync: 'Sinhronizacija',
+  test: 'Test',
+}
+
+export const syncLogStatusConfig: Record<string, { label: string; className: string }> = {
+  success: { label: 'Uspeh', className: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+  failed: { label: 'Napaka', className: 'bg-red-100 text-red-800 border-red-300' },
+  pending: { label: 'Čaka', className: 'bg-amber-100 text-amber-800 border-amber-300' },
+}
+
 export const reportRangeLabels: Record<ReportRange, string> = {
   today: 'Danes',
   week: 'Teden',

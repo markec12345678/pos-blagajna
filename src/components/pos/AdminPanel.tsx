@@ -52,6 +52,8 @@ import {
   Layers,
   Calendar,
   Clock,
+  Network,
+  History,
 } from 'lucide-react'
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -123,6 +125,9 @@ import { PrinterSettings } from './PrinterSettings'
 import { ReservationsTab } from './ReservationsTab'
 import { TimeEntriesTab } from './TimeEntriesTab'
 import { PdfExportButton } from './PdfExportButton'
+import { HubSyncTab } from './HubSyncTab'
+import { AuditLogTab } from './AuditLogTab'
+import { EmailSettingsTab } from './EmailSettingsTab'
 
 // =============================================================================
 // Pomožne konstante
@@ -138,6 +143,9 @@ const TABS = [
   { value: 'skladisce', label: 'Skladišče', icon: Boxes },
   { value: 'stroski', label: 'Stroški', icon: Receipt },
   { value: 'delavci', label: 'Delavci', icon: Clock },
+  { value: 'hubsync', label: 'HubSync', icon: Network },
+  { value: 'audit', label: 'Audit', icon: History },
+  { value: 'email', label: 'Email', icon: Mail },
   { value: 'nastavitve', label: 'Nastavitve', icon: SettingsIcon },
 ] as const
 
@@ -252,6 +260,15 @@ export default function AdminPanel() {
           </TabsContent>
           <TabsContent value="delavci" className="mt-0">
             <TimeEntriesTab />
+          </TabsContent>
+          <TabsContent value="hubsync" className="mt-0">
+            <HubSyncTab />
+          </TabsContent>
+          <TabsContent value="audit" className="mt-0">
+            <AuditLogTab />
+          </TabsContent>
+          <TabsContent value="email" className="mt-0">
+            <EmailSettingsTab />
           </TabsContent>
           <TabsContent value="nastavitve" className="mt-0">
             <SettingsTab />

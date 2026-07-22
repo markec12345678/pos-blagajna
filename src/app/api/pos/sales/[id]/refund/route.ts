@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth } from '@/lib/auth'
+import { logAudit } from '@/lib/audit'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -98,6 +99,15 @@ export async function POST(req: NextRequest, { params }: Params) {
       }
 
       return updated
+    })
+
+    await logAudit({
+      userId: auth.id,
+      action: 'storno',
+      entityType: 'sale',
+      entityId: id,
+      description: `Storno računa ${sale.receiptNo} (znesek: ${sale.total} EUR)`,
+      metadata: { receiptNo: sale.receiptNo, total: sale.total, reason },
     })
 
     return NextResponse.json({

@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyPassword, createSession } from '@/lib/auth'
+import { logAudit } from '@/lib/audit'
 
 export async function POST(req: NextRequest) {
   try {
@@ -30,6 +31,14 @@ export async function POST(req: NextRequest) {
       username: user.username,
       name: user.name,
       role: user.role,
+    })
+
+    await logAudit({
+      userId: user.id,
+      action: 'login',
+      entityType: 'user',
+      entityId: user.id,
+      description: `Prijava uporabnika: ${user.username}`,
     })
 
     return NextResponse.json({
