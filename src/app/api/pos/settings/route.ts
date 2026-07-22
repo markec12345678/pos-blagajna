@@ -39,13 +39,24 @@ export async function PATCH(req: NextRequest) {
       'printKitchenReceipt',
       'printClientReceipt',
       'defaultCashier',
+      // Nastavitve tiskalnika
+      'printerEnabled',
+      'printerType',
+      'printerIp',
+      'printerPort',
+      'printerWidth',
+      'printerAutoCut',
+      'printerBeep',
+      'printerOpenDrawer',
     ]
 
     const data: any = {}
     for (const key of allowed) {
       if (body[key] !== undefined) {
-        if (key === 'taxRate') {
+        if (key === 'taxRate' || key === 'printerPort' || key === 'printerWidth') {
           data[key] = Number(body[key])
+        } else if (typeof body[key] === 'string' && ['printerIp'].includes(key)) {
+          data[key] = body[key] || null
         } else {
           data[key] = body[key]
         }

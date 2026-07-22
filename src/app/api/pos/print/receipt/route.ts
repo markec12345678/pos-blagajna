@@ -1,14 +1,15 @@
-// API: POST /api/pos/print/receipt - izpis računa na ESC/POS tiskalnik preko mreže
-// Telo: { saleId: string }
-// Prebere sale iz baze, zgenerira ESC/POS byte array, pošlje na tiskalnik preko TCP
+// API: POST /api/pos/print/receipt - izpis računa na ESC/POS tiskalnik
+// Telo: { saleId: string, language?: 'sl'|'en'|'it' }
 //
-// Tiskalnik mora biti konfiguriran v Settings (printerIp, printerPort)
-// Če printerIp ni nastavljen, vrne byte array kot base64 (za client-side WebUSB)
+// Strategija:
+// 1. Preberi Settings — če je printerType='network' in printerEnabled, poskusi TCP
+// 2. Če printerType='usb' ali network fail, vrni base64 za client-side WebUSB
+// 3. Če printerType='browser', samo vrni success (client uporabi window.print)
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth } from '@/lib/auth'
-import { buildReceipt, buildTestPrint } from '@/lib/escpos'
-import * as net from 'net'
+import { buildReceipt } from '@/lib/escpos'
+import { printToNetworkPrinter } from '@/lib/network-printer'
 
 export async function POST(req: NextRequest) {
   const auth = await requireAuth(['admin', 'cashier'])
@@ -39,6 +40,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Zgeneriraj ESC/POS byte array
+    const printerWidth = (settings.printerWidth === 48 ? 48 : 32) as 32 | 48
     const bytes = buildReceipt({
       receiptNo: sale.receiptNo,
       date: sale.createdAt,
@@ -67,26 +69,44 @@ export async function POST(req: NextRequest) {
       customerName: sale.customerName || undefined,
       cashierName: sale.cashier?.name,
       note: sale.note || undefined,
-      printerWidth: 32, // 58mm privzeto
+      printerWidth,
       language: language as 'sl' | 'en' | 'it',
     })
 
-    // Če imamo IP tiskalnika, pošlji preko TCP
-    // (v sandboxu bo to verjetno failalo — vendar vračamo tudi base64 za client-side)
     const base64 = Buffer.from(bytes).toString('base64')
+
+    // Strategija tiskanja
     let printed = false
     let printError: string | null = null
+    let printMethod: 'network' | 'usb' | 'browser' = 'browser'
 
-    // Trenutno ne pošiljamo preko TCP, ker nimamo IP shranjenega v Settings.
-    // To bo implementirano, ko bomo dodali printerIp polje v Settings model.
-    // Zaenkrat vračamo base64, ki ga klient lahko uporabi z WebUSB.
+    // 1. Poskusi TCP/IP mrežni tiskalnik, če je konfiguriran
+    if (settings.printerEnabled && settings.printerType === 'network' && settings.printerIp) {
+      printMethod = 'network'
+      const result = await printToNetworkPrinter(bytes, {
+        ip: settings.printerIp,
+        port: settings.printerPort || 9100,
+        timeout: 5000,
+      })
+      if (result.success) {
+        printed = true
+      } else {
+        printError = result.error || 'Napaka mrežnega tiskanja'
+      }
+    } else if (settings.printerEnabled && settings.printerType === 'usb') {
+      printMethod = 'usb'
+      // Client-side bo poslal preko WebUSB
+    } else {
+      printMethod = 'browser'
+    }
 
     return NextResponse.json({
       success: true,
-      printed, // ali je bilo tiskano preko TCP
-      printError, // napaka TCP tiskanja, če obstaja
+      printed,
+      printMethod,
+      printError,
       base64, // za client-side WebUSB ali debug
-      bytes: bytes.length, // število byte-ov
+      bytes: bytes.length,
       receiptNo: sale.receiptNo,
     })
   } catch (e: any) {

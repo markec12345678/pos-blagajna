@@ -218,5 +218,16 @@ model Settings {
   printKitchenReceipt Boolean @default(true)
   printClientReceipt  Boolean @default(true)
   defaultCashier  String?
+
+  // Nastavitve tiskalnika
+  printerEnabled  Boolean @default(false)
+  printerType     String  @default("usb") // usb, network, browser
+  printerIp       String? // npr. 192.168.1.100
+  printerPort     Int     @default(9100) // standardni ESC/POS port
+  printerWidth    Int     @default(32) // 32 (58mm) ali 48 (80mm)
+  printerAutoCut  Boolean @default(true)
+  printerBeep     Boolean @default(true)
+  printerOpenDrawer Boolean @default(true)
+
   updatedAt       DateTime @updatedAt
 }

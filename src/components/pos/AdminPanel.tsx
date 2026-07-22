@@ -117,6 +117,7 @@ import {
   expenseCategoryLabels,
   reportRangeLabels,
 } from './types'
+import { PrinterSettings } from './PrinterSettings'
 
 // =============================================================================
 // Pomožne konstante
@@ -2828,6 +2829,9 @@ function SettingsTab() {
           Shrani nastavitve
         </Button>
       </div>
+
+      {/* Nastavitve tiskalnika — ločena komponenta z lastnim UI-jem */}
+      <PrinterSettings settings={settings} onSaved={load} />
     </div>
   )
 }
