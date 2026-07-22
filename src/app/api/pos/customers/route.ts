@@ -69,6 +69,8 @@ export async function POST(req: NextRequest) {
         phone: phone || null,
         address: address || null,
         notes: notes || null,
+        segment: body.segment || 'regular',
+        birthday: body.birthday ? new Date(body.birthday) : null,
       },
     })
     return NextResponse.json({ customer }, { status: 201 })

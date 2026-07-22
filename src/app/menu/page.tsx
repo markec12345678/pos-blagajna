@@ -13,7 +13,7 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { LanguageSwitcher } from '@/components/pos/LanguageSwitcher'
 import { useI18n } from '@/i18n'
-import { Utensils, Phone, MapPin, Clock, Calendar, Users, ShoppingCart, Plus, ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react'
+import { Utensils, Phone, MapPin, Clock, Calendar, Users, ShoppingCart, Plus, ArrowLeft, CheckCircle2, Loader2, CreditCard } from 'lucide-react'
 
 interface PublicProduct {
   id: string
@@ -272,12 +272,26 @@ export default function MenuPage() {
                 <span className="text-emerald-600">{formatPrice(cartTotal, restaurant?.currencySymbol)}</span>
               </div>
               <p className="text-xs text-slate-500 text-center">
-                {lang === 'sl' ? 'Cene vključujejo DDV. Naročilo opravite na blagajni.' : 'Prices include VAT. Order at the counter.'}
+                {lang === 'sl' ? 'Cene vključujejo DDV.' : 'Prices include VAT.'}
               </p>
             </>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCartOpen(false)}>{lang === 'sl' ? 'Zapri' : 'Close'}</Button>
+          <DialogFooter className="flex-col gap-2 sm:flex-col">
+            <Button variant="outline" onClick={() => setIsCartOpen(false)} className="w-full">
+              {lang === 'sl' ? 'Zapri' : 'Close'}
+            </Button>
+            {cart.length > 0 && (
+              <StripeCheckoutButton
+                amount={cartTotal}
+                items={cart}
+                currencySymbol={restaurant?.currencySymbol || '€'}
+                lang={lang}
+                onSuccess={() => {
+                  setCart([])
+                  setIsCartOpen(false)
+                }}
+              />
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -393,5 +407,114 @@ function ReservationDialog({ open, onOpenChange, restaurantName, onSuccess }: {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  )
+}
+
+// Stripe Checkout Button — poskusi online plačilo, če ni konfigurano, pade na "plačilo na blagajni"
+function StripeCheckoutButton({
+  amount,
+  items,
+  currencySymbol,
+  lang,
+  onSuccess,
+}: {
+  amount: number
+  items: CartItem[]
+  currencySymbol: string
+  lang: string
+  onSuccess: () => void
+}) {
+  const { toast } = useToast()
+  const [loading, setLoading] = useState(false)
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'creating' | 'paying' | 'success' | 'failed'>('idle')
+
+  const handlePay = async () => {
+    setLoading(true)
+    setPaymentStatus('creating')
+    try {
+      // 1. Ustvari PaymentIntent
+      const res = await fetch('/api/public/payment/intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount, items }),
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        // Stripe ni konfiguriran — pade na "plačilo na blagajni"
+        if (data.error?.includes('konfigurirana') || data.error?.includes('konfiguriran')) {
+          toast({
+            title: lang === 'sl' ? 'ℹ️ Online plačilo ni na voljo' : 'Online payment not available',
+            description: lang === 'sl' ? 'Naročilo opravite na blagajni.' : 'Please pay at the counter.',
+          })
+          setPaymentStatus('idle')
+        } else {
+          throw new Error(data.error)
+        }
+        return
+      }
+
+      // 2. Če imamo clientSecret, bi lahko uporabili Stripe Elements
+      // Zaenkrat samo simuliramo uspeh (pravi Stripe Elements bi bil tukaj)
+      // V produkciji: uporabi @stripe/stripe-js za loadStripe in Stripe Elements
+      setPaymentStatus('paying')
+
+      // 3. Preveri status
+      const verifyRes = await fetch('/api/public/payment/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentIntentId: data.paymentIntentId }),
+      })
+      const verifyData = await verifyRes.json()
+
+      if (verifyData.paid) {
+        setPaymentStatus('success')
+        toast({
+          title: '✅ Plačilo uspešno!',
+          description: lang === 'sl' ? `Plačili ste ${amount.toFixed(2)} ${currencySymbol}` : `Paid ${amount.toFixed(2)} ${currencySymbol}`,
+        })
+        setTimeout(onSuccess, 2000)
+      } else {
+        // PaymentIntent ustvarjen, a še ni plačan — v produkciji bi tu prikazali Stripe Elements
+        toast({
+          title: lang === 'sl' ? '💳 Plačilni sistem pripravljen' : 'Payment system ready',
+          description: lang === 'sl' ? 'V produkciji se tu odpre Stripe Elements za vnos kartice.' : 'In production, Stripe Elements opens here for card input.',
+        })
+        setPaymentStatus('idle')
+      }
+    } catch (e: any) {
+      setPaymentStatus('failed')
+      toast({ title: 'Napaka pri plačilu', description: e.message, variant: 'destructive' })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (paymentStatus === 'success') {
+    return (
+      <div className="w-full p-3 bg-emerald-50 border border-emerald-300 rounded-lg text-center">
+        <CheckCircle2 className="w-6 h-6 text-emerald-600 mx-auto mb-1" />
+        <div className="text-sm font-medium text-emerald-700">
+          {lang === 'sl' ? 'Plačilo uspešno!' : 'Payment successful!'}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <Button
+      onClick={handlePay}
+      disabled={loading || amount <= 0}
+      className="w-full bg-[#635BFF] hover:bg-[#5851ED] text-white"
+    >
+      {loading ? (
+        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+      ) : (
+        <CreditCard className="w-4 h-4 mr-2" />
+      )}
+      {loading
+        ? (paymentStatus === 'creating' ? 'Priprava...' : 'Obdelava...')
+        : (lang === 'sl' ? `Plačaj ${amount.toFixed(2)} ${currencySymbol}` : `Pay ${amount.toFixed(2)} ${currencySymbol}`)}
+    </Button>
   )
 }

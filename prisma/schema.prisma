@@ -62,6 +62,10 @@ model Product {
   saleItems   SaleItem[]
   orderItems  OrderItem[]
   stockMoves  StockMove[]
+
+  @@index([categoryId])
+  @@index([active])
+  @@index([barcode])
 }
 
 // Mize v restavraciji
@@ -144,6 +148,11 @@ model Sale {
   order         Order?      @relation(fields: [orderId], references: [id])
   createdAt     DateTime   @default(now())
   items         SaleItem[]
+
+  @@index([createdAt])
+  @@index([cashierId])
+  @@index([status])
+  @@index([paymentMethod])
 }
 
 // Postavke računa
@@ -168,11 +177,30 @@ model Customer {
   phone     String?
   address   String?
   notes     String?
+  segment   String   @default("regular") // regular, vip, wholesale, blacklist
+  birthday  DateTime?
   loyaltyPoints Int @default(0)
   totalSpent Float  @default(0)
   visits    Int     @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  interactions CustomerInteraction[]
+}
+
+// CRM interakcije s kupci
+model CustomerInteraction {
+  id          String   @id @default(cuid())
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  type        String   // call, email, visit, note, complaint, feedback
+  subject     String
+  description String?
+  userId      String?  // kdo je zabeležil
+  createdAt   DateTime @default(now())
+
+  @@index([customerId])
+  @@index([createdAt])
 }
 
 // Premiki zaloge (sprejem, odpis, popolnitev)
