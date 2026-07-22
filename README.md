@@ -234,6 +234,26 @@ POS Blagajna je popoln sistem za upravljanje prodaje z naslednjimi ključnimi la
   - Predlogi uporabe (rezervacije, nizka zaloga, dnevni povzetek, storno)
 - API: POST /api/pos/email/test
 
+### 🌐 Javni spletni meni (/menu)
+- Javna stran brez auth za stranke
+- Prikaz vseh izdelkov in kategorij z barvno kodiranjem
+- Košarica z dodajanjem/odstranjevanjem izdelkov
+- Hero sekcija z informacijami o restavraciji (naslov, telefon, VAT)
+- Footer z davčno številko in avtorskim pravom
+- Multilingual (SL/EN/IT) z LanguageSwitcher
+- Responsive (mobile-first) — deluje na telefonu, tablici, računalniku
+- API: GET /api/public/menu (javni podatki), POST /api/public/reserve (javna rezervacija)
+
+### 🎫 QR loyalty sistem
+- Generiranje QR kode za vsakega kupca (qrcode knjižnica)
+- Format: `POS:CUSTOMER:{customerId}`
+- 300×300 px, emerald barvna shema
+- API: GET /api/pos/customers/[id]/qr — generira base64 PNG
+- API: POST /api/pos/customers/scan — skenira QR in vrne kupca
+- Loyalty točke: 1 točka na porabljen 1 EUR
+- Vrne: loyaltyPoints, totalSpent, visits
+- Uporaba: blagajnik skenira QR kodo kupca za hitro identifikacijo in pregled točk
+
 ---
 
 ## 🛠 Tehnologije
@@ -554,7 +574,7 @@ NODE_ENV="production"
 
 ## 📅 Fejlendar
 
-### ✅ Opravljeno (v1.4)
+### ✅ Opravljeno (v1.5)
 - [x] Avtentikacija z JWT cookie
 - [x] RBAC (admin/cashier/chef)
 - [x] Katalog izdelkov s kategorijami
@@ -585,14 +605,16 @@ NODE_ENV="production"
 - [x] HubSync (sinhronizacija več lokacij)
 - [x] Audit log (sledenje admin akcij)
 - [x] Email obvestila (SMTP z Nodemailer)
+- [x] Javni spletni meni (/menu) za stranke
+- [x] QR loyalty sistem (generiranje + scan)
 
-### 🔲 Načrtovano (v1.5+)
+### 🔲 Načrtovano (v1.6+)
 - [ ] SMS obvestila za rezervacije
 - [ ] Mobilna aplikacija (React Native)
 - [ ] Integracija z fiskalnim strojem (Slovenija)
 - [ ] MailChimp integracija za marketing
-- [ ] Spletni modul za stranke (online naročanje)
-- [ ] loyalty program z QR kodami
+- [ ] Online plačila (Stripe, PayPal)
+- [ ] Real-time dashboard z grafikoni (Chart.js)
 
 ---
 
