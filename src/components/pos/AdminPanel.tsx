@@ -129,6 +129,7 @@ import { HubSyncTab } from './HubSyncTab'
 import { AuditLogTab } from './AuditLogTab'
 import { EmailSettingsTab } from './EmailSettingsTab'
 import { DashboardCharts } from './DashboardCharts'
+import { CrmDashboard } from './CrmDashboard'
 
 // =============================================================================
 // Pomožne konstante
@@ -141,6 +142,7 @@ const TABS = [
   { value: 'mize', label: 'Mize', icon: Table2 },
   { value: 'rezervacije', label: 'Rezervacije', icon: Calendar },
   { value: 'kupci', label: 'Kupci', icon: UserCircle2 },
+  { value: 'crm', label: 'CRM', icon: UsersIcon },
   { value: 'skladisce', label: 'Skladišče', icon: Boxes },
   { value: 'stroski', label: 'Stroški', icon: Receipt },
   { value: 'delavci', label: 'Delavci', icon: Clock },
@@ -253,6 +255,9 @@ export default function AdminPanel() {
           </TabsContent>
           <TabsContent value="kupci" className="mt-0">
             <CustomersTab />
+          </TabsContent>
+          <TabsContent value="crm" className="mt-0">
+            <CrmDashboard />
           </TabsContent>
           <TabsContent value="skladisce" className="mt-0">
             <StockTab />
