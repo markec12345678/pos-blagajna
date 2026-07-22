@@ -54,6 +54,7 @@ import {
   Clock,
   Network,
   History,
+  CreditCard,
 } from 'lucide-react'
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -132,6 +133,7 @@ import { DashboardCharts } from './DashboardCharts'
 import { CrmDashboard } from './CrmDashboard'
 import { ShiftsTab } from './ShiftsTab'
 import { SalesForecast } from './SalesForecast'
+import { BillingTab } from './BillingTab'
 
 // =============================================================================
 // Pomožne konstante
@@ -151,6 +153,7 @@ const TABS = [
   { value: 'urnik', label: 'Urnik', icon: Calendar },
   { value: 'napoved', label: 'Napoved', icon: TrendingUp },
   { value: 'hubsync', label: 'HubSync', icon: Network },
+  { value: 'billing', label: 'Billing', icon: CreditCard },
   { value: 'audit', label: 'Audit', icon: History },
   { value: 'email', label: 'Email', icon: Mail },
   { value: 'nastavitve', label: 'Nastavitve', icon: SettingsIcon },
@@ -280,6 +283,9 @@ export default function AdminPanel() {
           </TabsContent>
           <TabsContent value="hubsync" className="mt-0">
             <HubSyncTab />
+          </TabsContent>
+          <TabsContent value="billing" className="mt-0">
+            <BillingTab />
           </TabsContent>
           <TabsContent value="audit" className="mt-0">
             <AuditLogTab />
