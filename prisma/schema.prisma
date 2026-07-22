@@ -28,6 +28,11 @@ model User {
   timeEntries  TimeEntry[]
   auditLogs    AuditLog[]
   shifts       Shift[]
+
+  // 2FA
+  twoFactorSecret   String?  // TOTP secret (base32)
+  twoFactorEnabled  Boolean  @default(false)
+  twoFactorBackupCodes String? // JSON array of backup codes
 }
 
 // Kategorije izdelkov

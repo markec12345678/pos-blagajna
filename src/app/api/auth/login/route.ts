@@ -3,9 +3,27 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyPassword, createSession } from '@/lib/auth'
 import { logAudit } from '@/lib/audit'
+import { checkRateLimit, getClientIp, resetRateLimit, LOGIN_RATE_LIMIT } from '@/lib/ratelimit'
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting
+    const ip = getClientIp(req)
+    const rateLimitKey = `login:${ip}`
+    const rateLimit = checkRateLimit(rateLimitKey, LOGIN_RATE_LIMIT)
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: `Preveč neuspelih poskusov. Poskusite znova čez ${rateLimit.retryAfter} sekund.` },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(rateLimit.retryAfter),
+            'X-RateLimit-Remaining': '0',
+          },
+        }
+      )
+    }
+
     const { username, password } = await req.json()
     if (!username || !password) {
       return NextResponse.json({ error: 'Manjka uporabniško ime ali geslo' }, { status: 400 })
@@ -40,6 +58,9 @@ export async function POST(req: NextRequest) {
       entityId: user.id,
       description: `Prijava uporabnika: ${user.username}`,
     })
+
+    // Resetiraj rate limit po uspešni prijavi
+    resetRateLimit(rateLimitKey)
 
     return NextResponse.json({
       user: {
