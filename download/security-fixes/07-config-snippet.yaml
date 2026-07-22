@@ -1,0 +1,47 @@
+# =============================================================================
+# DODATNE KONFIGURACIJSKE NASTAVITVE (prilepi na konec config.yaml)
+# =============================================================================
+#
+# Te nastavitve so potrebne za popravke 01 (CORS) in 04 (rate limiting).
+# Prilepi vsebino te datoteke na konec tvojega config.yaml.
+#
+# POMEMBNO: V produkciji zamenjaj dovoljene izvore (allowed_origins) z
+# dejanskimi domenami in generiraj novo setup_token.
+#
+#   openssl rand -hex 32   # za setup_token
+# =============================================================================
+
+cors:
+  allowed_origins:
+    - "http://localhost:3000"      # frontend dev server (vite)
+    - "http://localhost:8080"      # frontend statičen server (Go)
+    - "http://localhost:5173"      # vite alternativni port
+    # - "https://pos.tvoja-domena.si"   # PRODUKCIJA: odkomentiraj in nastavi
+  allowed_methods:
+    - "OPTIONS"
+    - "GET"
+    - "POST"
+    - "PATCH"
+    - "DELETE"
+  allowed_headers:
+    - "Content-Type"
+    - "Authorization"
+    - "X-Requested-With"
+  allow_credentials: true
+  max_age_seconds: 600
+
+# Token, ki ga uporabnik vnese v Setup.vue, da se lahko poveže na setup
+# endpoint. Brez tega žetona so /api/setup/* endpointi nedosegljivi.
+# Generiraj z: openssl rand -hex 32
+setup_token: "CHANGE_ME_TO_RANDOM_64_HEX_CHARS"
+
+# Rate limiting za občutljive endpointe (login, register, password reset)
+rate_limit:
+  enabled: true
+  # Največje število zahtevkov v oknu
+  login_max_requests: 5
+  # Velikost okna v sekundah
+  login_window_seconds: 60
+  # Največje število neuspelih prijav pred začasno blokado
+  login_max_failures: 5
+  login_block_minutes: 15

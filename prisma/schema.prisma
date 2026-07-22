@@ -1,0 +1,450 @@
+// Prisma schema za POS blagajno (polna razlicia)
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Multi-tenant — organizacije (za SaaS model)
+model Tenant {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  code        String?  @unique
+  plan        String   @default("starter") // starter, pro, enterprise
+  maxUsers    Int      @default(5)
+  maxLocations Int     @default(1)
+  active      Boolean  @default(true)
+  trialEndsAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Billing
+  stripeCustomerId    String?
+  stripeSubscriptionId String?
+  subscriptionStatus  String  @default("trialing") // trialing, active, past_due, canceled
+  currentPeriodEnd    DateTime?
+  cancelAtPeriodEnd   Boolean @default(false)
+
+  // White-label
+  customLogoUrl       String?
+  customPrimaryColor  String?  // npr. "#059669"
+  customName          String?  // override "POS Blagajna"
+  customDomain        String?  // npr. "pos.primorska.si"
+
+  users       UserTenant[]
+}
+
+// Povezava User <-> Tenant (many-to-many)
+model UserTenant {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  role      String   @default("cashier") // admin, cashier, chef
+  createdAt DateTime @default(now())
+
+  @@unique([userId, tenantId])
+  @@index([tenantId])
+}
+
+// Uporabniki z vlogami (RBAC)
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  password     String   // bcrypt hash
+  name         String
+  email        String?
+  role         String   @default("cashier") // admin, cashier, chef
+  active       Boolean  @default(true)
+  lastLogin    DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sales        Sale[]
+  orders       Order[]
+  stockMoves   StockMove[]
+  expenses     Expense[]
+  timeEntries  TimeEntry[]
+  auditLogs    AuditLog[]
+  shifts       Shift[]
+
+  // 2FA
+  twoFactorSecret   String?  // TOTP secret (base32)
+  twoFactorEnabled  Boolean  @default(false)
+  twoFactorBackupCodes String? // JSON array of backup codes
+
+  // Multi-tenant
+  tenants     UserTenant[]
+}
+
+// Kategorije izdelkov
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  color     String    @default("#6B7280")
+  position  Int       @default(0)
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// Izdelki
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  sku         String?  @unique
+  barcode     String?
+  stock       Float    @default(0)
+  minStock    Float    @default(5)
+  unit        String   @default("kos")
+  image       String?
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+  active      Boolean  @default(true)
+  isFood      Boolean  @default(true) // ali gre v kuhinjo
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  saleItems   SaleItem[]
+  orderItems  OrderItem[]
+  stockMoves  StockMove[]
+  modifiers   ProductModifier[]
+
+  @@index([categoryId])
+  @@index([active])
+  @@index([barcode])
+}
+
+// Mize v restavraciji
+model Table {
+  id         String    @id @default(cuid())
+  name       String    @unique // "Miza 1", "Miza 2"
+  seats      Int       @default(4)
+  area       String?   // notranja, terasa, bar
+  status     String    @default("free") // free, occupied, reserved, dirty
+  active     Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  orders        Order[]
+  reservations  Reservation[]
+}
+
+// Naročilo (order) - ločeno od prodaje (sale)
+// Order je za kuhinjo, Sale je plačilo
+model Order {
+  id           String      @id @default(cuid())
+  orderNo      String      @unique // N-YYYYMMDD-XXXX
+  tableId      String?
+  table        Table?      @relation(fields: [tableId], references: [id])
+  status       String      @default("open") // open, sent, preparing, ready, served, cancelled, paid
+  type         String      @default("dine_in") // dine_in, takeaway, delivery
+  customerName String?
+  itemsCount   Int         @default(0)
+  total        Float       @default(0)
+  note         String?
+  cashierId    String?
+  cashier      User?       @relation(fields: [cashierId], references: [id])
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  sentAt       DateTime?
+  readyAt      DateTime?
+  servedAt     DateTime?
+  paidAt       DateTime?
+
+  items        OrderItem[]
+  sale         Sale?
+}
+
+// Postavke naročila
+model OrderItem {
+  id          String  @id @default(cuid())
+  orderId     String
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id])
+  name        String
+  price       Float
+  quantity    Float
+  unit        String  @default("kos")
+  total       Float
+  note        String?  // "brez čebule", "extra sir"
+  status      String  @default("pending") // pending, preparing, ready, served
+}
+
+// Prodaja (račun) - zaključena transakcija
+model Sale {
+  id            String     @id @default(cuid())
+  receiptNo     String     @unique
+  subtotal      Float
+  taxRate       Float      @default(0.22)
+  taxAmount     Float
+  discount      Float      @default(0)
+  tips          Float      @default(0)
+  total         Float
+  paymentMethod String     @default("cash") // cash, card, mobile
+  paidAmount    Float      @default(0)
+  changeAmount  Float      @default(0)
+  status        String     @default("completed") // completed, refunded, voided
+  customerId    String?
+  customerName  String?
+  cashierId     String?
+  cashier       User?      @relation(fields: [cashierId], references: [id])
+  note          String?
+  orderId       String?    @unique // povezava na Order ce je iz naročila
+  order         Order?      @relation(fields: [orderId], references: [id])
+  createdAt     DateTime   @default(now())
+  items         SaleItem[]
+
+  // Fiskalni podatki (Slovenija - FURS)
+  fursEOR       String?  // Enkratna Oznaka Računa (36 znakov)
+  fursZOI       String?  // Zaščitna Oznaka Izdajatelja (MD5 hash, 32 znakov)
+  fursVerifiedAt DateTime? // kdaj je bil račun potrjen pri FURS
+
+  @@index([createdAt])
+  @@index([cashierId])
+  @@index([status])
+  @@index([paymentMethod])
+}
+
+// Postavke računa
+model SaleItem {
+  id        String  @id @default(cuid())
+  saleId    String
+  sale      Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
+  name      String
+  price     Float
+  quantity  Float
+  unit      String  @default("kos")
+  total     Float
+}
+
+// Kupci
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  notes     String?
+  segment   String   @default("regular") // regular, vip, wholesale, blacklist
+  birthday  DateTime?
+  loyaltyPoints Int @default(0)
+  totalSpent Float  @default(0)
+  visits    Int     @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  interactions CustomerInteraction[]
+}
+
+// CRM interakcije s kupci
+model CustomerInteraction {
+  id          String   @id @default(cuid())
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  type        String   // call, email, visit, note, complaint, feedback
+  subject     String
+  description String?
+  userId      String?  // kdo je zabeležil
+  createdAt   DateTime @default(now())
+
+  @@index([customerId])
+  @@index([createdAt])
+}
+
+// Premiki zaloge (sprejem, odpis, popolnitev)
+model StockMove {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  type        String   // receiving, waste, adjustment, transfer
+  quantity    Float    // pozitivno za sprejem, negativno za odpis
+  reason      String?
+  unitCost    Float?   // nakupna cena (za receiving)
+  totalValue  Float?
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  supplier    String?
+  createdAt   DateTime @default(now())
+}
+
+// Stroški (operativni)
+model Expense {
+  id          String   @id @default(cuid())
+  category    String   // rent, utilities, salaries, supplies, other
+  description String
+  amount      Float
+  date        DateTime @default(now())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  note        String?
+  createdAt   DateTime @default(now())
+}
+
+// Nastavitve aplikacije (singelton z id="default")
+model Settings {
+  id              String  @id @default("default")
+  restaurantName  String  @default("Moja restavracija")
+  address         String?
+  phone           String?
+  email           String?
+  vatNumber       String? // davcna stevilka
+  currency        String  @default("EUR")
+  currencySymbol  String  @default("€")
+  taxRate         Float   @default(0.22)
+  receiptFooter   String?
+  receiptHeader   String?
+  lowStockAlert   Boolean @default(true)
+  printKitchenReceipt Boolean @default(true)
+  printClientReceipt  Boolean @default(true)
+  defaultCashier  String?
+
+  // Nastavitve tiskalnika
+  printerEnabled  Boolean @default(false)
+  printerType     String  @default("usb") // usb, network, browser
+  printerIp       String? // npr. 192.168.1.100
+  printerPort     Int     @default(9100) // standardni ESC/POS port
+  printerWidth    Int     @default(32) // 32 (58mm) ali 48 (80mm)
+  printerAutoCut  Boolean @default(true)
+  printerBeep     Boolean @default(true)
+  printerOpenDrawer Boolean @default(true)
+
+  updatedAt       DateTime @updatedAt
+}
+
+// Rezervacije miz
+model Reservation {
+  id            String   @id @default(cuid())
+  tableId       String?
+  table         Table?   @relation(fields: [tableId], references: [id])
+  customerName  String
+  customerPhone String?
+  customerEmail String?
+  partySize     Int      @default(2)
+  datetime      DateTime // kdaj je rezervirana
+  duration      Int      @default(120) // v minutah
+  status        String   @default("pending") // pending, confirmed, cancelled, completed, no_show
+  note          String?
+  createdBy     String? // userId
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([datetime])
+  @@index([status])
+}
+
+// Sledenje delavcev (time tracking)
+model TimeEntry {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  clockIn       DateTime
+  clockOut      DateTime?
+  totalMinutes  Int? // izracunano ob clock-out
+  note          String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([clockIn])
+}
+
+// Lokacije (za HubSync - več restavracij)
+model Location {
+  id          String   @id @default(cuid())
+  name        String   @unique // "Ljubljana Center", "Maribor"
+  code        String?  @unique // "LJU01", "MB02"
+  address     String?
+  phone       String?
+  email       String?
+  isMain      Boolean  @default(false) // glavna lokacija
+  isHub       Boolean  @default(false) // ali je ta lokacija hub (master)
+  hubUrl      String?  // URL glavnega hub-a (za podrejene lokacije)
+  hubToken    String?  // bearer token za avtentikacijo s hub-om
+  lastSyncAt  DateTime?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  syncLogs    SyncLog[]
+}
+
+// Sinhronizacijski log (za HubSync)
+model SyncLog {
+  id           String   @id @default(cuid())
+  locationId   String?
+  location     Location? @relation(fields: [locationId], references: [id])
+  direction    String   // "push" (pošiljamo na hub) ali "pull" (prejemanje od hub-a)
+  entityType   String   // "sale", "product", "stock_move", "expense"
+  entityId     String?  // ID entitete
+  status       String   // "success", "failed", "pending"
+  error        String?
+  payload      String?  // JSON snapshot
+  createdAt    DateTime @default(now())
+
+  @@index([locationId])
+  @@index([createdAt])
+}
+
+// Audit log - sledenje admin akcij
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  action      String   // "create", "update", "delete", "login", "logout", "refund", "storno"
+  entityType  String   // "user", "product", "sale", "settings", "stock_move", "expense", "reservation"
+  entityId    String?
+  description String   // human-readable opis
+  metadata    String?  // JSON z dodatnimi podatki
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([entityType])
+}
+
+// Urniki zaposlenih (shift scheduling)
+model Shift {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  startTime   DateTime
+  endTime     DateTime?
+  breakMinutes Int    @default(30)
+  role        String   @default("cashier") // cashier, chef, admin
+  status      String   @default("scheduled") // scheduled, started, completed, cancelled, no_show
+  note        String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([startTime])
+  @@index([status])
+}
+
+// Produktni dodatki/modifikatorji (extra sir, brez čebule, itd.)
+model ProductModifier {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name        String   // "Extra sir", "Brez čebule", "Velika porcija"
+  priceDelta  Float    @default(0) // pozitivno = doplačilo, negativno = popust
+  type        String   @default("addon") // addon, removal, size, custom
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([productId])
+}
