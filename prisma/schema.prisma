@@ -21,6 +21,19 @@ model Tenant {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // Billing
+  stripeCustomerId    String?
+  stripeSubscriptionId String?
+  subscriptionStatus  String  @default("trialing") // trialing, active, past_due, canceled
+  currentPeriodEnd    DateTime?
+  cancelAtPeriodEnd   Boolean @default(false)
+
+  // White-label
+  customLogoUrl       String?
+  customPrimaryColor  String?  // npr. "#059669"
+  customName          String?  // override "POS Blagajna"
+  customDomain        String?  // npr. "pos.primorska.si"
+
   users       UserTenant[]
 }
 
