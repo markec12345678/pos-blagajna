@@ -25,10 +25,14 @@ import {
 import KitchenDisplay from './KitchenDisplay'
 import AdminPanel from './AdminPanel'
 import { usePosRealtime, notifyNewOrder, notifyOrderStatusChange, notifyNewSale, disconnectRealtime } from '@/lib/realtime'
+import { useI18n } from '@/i18n'
+import { LanguageSwitcher } from './LanguageSwitcher'
+import { getPrinter } from '@/lib/usb-printer'
 
 export default function POSPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const { t, lang } = useI18n()
   const [user, setUser] = useState<User | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [products, setProducts] = useState<Product[]>([])
@@ -365,6 +369,80 @@ export default function POSPage() {
   const setQuickPay = () => setPaidAmount(total.toFixed(2))
   const quickCash = [total, Math.ceil(total), Math.ceil(total / 5) * 5, Math.ceil(total / 10) * 10]
 
+  // Tiskanje računa na ESC/POS tiskalnik (WebUSB) ali fallback na brskalnik
+  const handlePrintReceipt = async (sale: Sale) => {
+    try {
+      const printer = getPrinter()
+
+      // Če USB tiskalnik ni povezan, poskusi auto-connect
+      if (!printer.isConnected()) {
+        const ok = await printer.autoConnect()
+        if (!ok) {
+          // Poizvedi API za ESC/POS byte array (tudi za debug)
+          const res = await fetch('/api/pos/print/receipt', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ saleId: sale.id, language: lang }),
+          })
+          const data = await res.json()
+          if (!res.ok || !data.base64) {
+            // Končni fallback — brskalnikovo tiskanje
+            window.print()
+            return
+          }
+          // Poizkusi povezati z dialogom
+          try {
+            const connected = await printer.connect()
+            if (!connected) {
+              toast({
+                title: 'Tiskalnik ni povezan',
+                description: t.settings.printerNotConnected,
+                variant: 'default',
+              })
+              window.print()
+              return
+            }
+          } catch (e: any) {
+            toast({
+              title: 'Tiskalnik',
+              description: e.message,
+            })
+            window.print()
+            return
+          }
+        }
+      }
+
+      // Pridobi byte array iz API
+      const res = await fetch('/api/pos/print/receipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ saleId: sale.id, language: lang }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.base64) {
+        window.print()
+        return
+      }
+
+      // Pošlji na USB tiskalnik
+      await printer.printBase64(data.base64)
+      toast({
+        title: '✅ Račun natisnjen',
+        description: sale.receiptNo,
+      })
+    } catch (e: any) {
+      console.error('Print error:', e)
+      toast({
+        title: 'Napaka pri tiskanju',
+        description: e.message,
+        variant: 'destructive',
+      })
+      // Fallback
+      window.print()
+    }
+  }
+
   // Ack sajta - dokler ne preverimo auth
   if (authLoading || !user) {
     return (
@@ -448,12 +526,13 @@ export default function POSPage() {
 
           <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">
-              <div className="text-xs text-slate-500">Danes</div>
+              <div className="text-xs text-slate-500">{t.app.today}</div>
               <div className="text-sm font-medium text-slate-900">
-                {new Date().toLocaleDateString('sl-SI', { weekday: 'long', day: 'numeric', month: 'long' })}
+                {new Date().toLocaleDateString(lang === 'sl' ? 'sl-SI' : lang === 'en' ? 'en-GB' : 'it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
+            <LanguageSwitcher />
+            <Button variant="ghost" size="sm" onClick={handleLogout} title={t.auth.logout}>
               <LogOut className="w-4 h-4" />
             </Button>
           </div>
@@ -795,10 +874,10 @@ export default function POSPage() {
           </DialogHeader>
           {lastSale && <ReceiptView sale={lastSale} settings={settings} />}
           <DialogFooter>
-            <Button variant="outline" onClick={() => window.print()}>
-              <Printer className="w-4 h-4 mr-2" /> Natisni
+            <Button variant="outline" onClick={() => handlePrintReceipt(lastSale)}>
+              <Printer className="w-4 h-4 mr-2" /> {t.pos.printReceipt}
             </Button>
-            <Button onClick={() => setIsReceiptOpen(false)}>Nov račun</Button>
+            <Button onClick={() => setIsReceiptOpen(false)}>{t.pos.newReceipt}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
