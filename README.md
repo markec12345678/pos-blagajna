@@ -165,6 +165,39 @@ POS Blagajna je popoln sistem za upravljanje prodaje z naslednjimi ključnimi la
 - Slovenski labeli (Gotovina/Kartica/Mobilno, Zaključen/Storniran)
 - Stolpci: račun, datum, čas, blagajnik, kupec, vrednost, popust, DDV, napitnina, skupaj, način plačila, plačano, vračilo, status, postavke
 
+### 📄 PDF poročila
+- Profesionalen PDF izvoz poročil (A4 landscape)
+- 8 metrik: skupna prodaja, št. računov, povprečni račun, napitnine, popusti, stroški, čisti dobiček, zapadli davki
+- 4 tabele: prodaja po urah, top 10 izdelkov, plačila po načinu, stroški po kategorijah
+- Slovenski labeli z EUR formatiranjem (1.234,56 €)
+- PdfExportButton komponenta z datumskim obsegom
+- Za računovodstvo in arhiviranje
+
+### 📅 Rezervacije miz
+- Nov Prisma model: Reservation (tableId, customerName, phone, email, partySize, datetime, duration, status, note)
+- Status: pending → confirmed → completed | cancelled | no_show
+- API: CRUD z validacijo (datetime v prihodnosti, partySize ≥ 1)
+- ReservationsTab v admin panel:
+  - Statistika danes (rezervacije, čakajoče, potrjene, gostje)
+  - Filtri (datum, status z gumbi)
+  - Seznam grupiran po datumu z barvno kodiranimi statusi
+  - Detail dialog z akcijami (potrdi, zaključi, prekliči, no_show)
+  - Opozorilo o zamudi za pretečene rezervacije
+
+### ⏰ Sledenje delavcev (time tracking)
+- Nov Prisma model: TimeEntry (userId, clockIn, clockOut, totalMinutes, note)
+- API: POST /time/clock (in/out), GET /time/entries, GET /time/status
+- **ClockButton v headerju**:
+  - Prijava na delo → timer se začne (HH:MM:SS format, live update)
+  - Odjava → prikaz trajanja v toast
+  - Prikaz dnevnih minut
+- TimeEntriesTab v admin panel:
+  - Statistika (skupno ur, delavcev, vnosov, odprtih)
+  - Filtri (datumski obseg)
+  - Grupirano po uporabniku s skupnim trajanjem
+  - Aktivni vnosi označeni z ACTIVE badge
+  - Praćenje v realnem času za odprte vnose
+
 ---
 
 ## 🛠 Tehnologije
@@ -485,7 +518,7 @@ NODE_ENV="production"
 
 ## 📅 Fejlendar
 
-### ✅ Opravljeno (v1.2)
+### ✅ Opravljeno (v1.3)
 - [x] Avtentikacija z JWT cookie
 - [x] RBAC (admin/cashier/chef)
 - [x] Katalog izdelkov s kategorijami
@@ -510,15 +543,15 @@ NODE_ENV="production"
 - [x] Nastavitve tiskalnika v admin panelu
 - [x] PWA offline mode
 - [x] CSV izvoz poročil (prodaja, stroški)
+- [x] PDF izvoz poročil (pdfkit, A4 landscape)
+- [x] Rezervacije miz z dashboardom
+- [x] Sledenje delavcev (time tracking z clock in/out)
 
-### 🔲 Načrtovano (v1.3+)
+### 🔲 Načrtovano (v1.4+)
 - [ ] HubSync (več lokacij)
 - [ ] MailChimp integracija za marketing
 - [ ] SMS obvestila za rezervacije
 - [ ] Mobilna aplikacija (React Native)
-- [ ] PDF izvoz poročil
-- [ ] Rezervacije miz
-- [ ] Spremljanje delavcev (time tracking)
 - [ ] Integracija z fiskalnim strojem (Slovenija)
 
 ---
