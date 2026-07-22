@@ -128,6 +128,7 @@ import { PdfExportButton } from './PdfExportButton'
 import { HubSyncTab } from './HubSyncTab'
 import { AuditLogTab } from './AuditLogTab'
 import { EmailSettingsTab } from './EmailSettingsTab'
+import { DashboardCharts } from './DashboardCharts'
 
 // =============================================================================
 // Pomožne konstante
@@ -234,8 +235,9 @@ export default function AdminPanel() {
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
-          <TabsContent value="pregled" className="mt-0">
+          <TabsContent value="pregled" className="mt-0 space-y-4">
             <DashboardTab />
+            <DashboardCharts />
           </TabsContent>
           <TabsContent value="uporabniki" className="mt-0">
             <UsersTab />
