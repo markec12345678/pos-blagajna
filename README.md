@@ -198,6 +198,42 @@ POS Blagajna je popoln sistem za upravljanje prodaje z naslednjimi ključnimi la
   - Aktivni vnosi označeni z ACTIVE badge
   - Praćenje v realnem času za odprte vnose
 
+### 🌐 HubSync (sinhronizacija več lokacij)
+- Nov Prisma model: Location, SyncLog
+- API: CRUD za lokacije + sinhronizacija z hub-om
+- HubSyncTab v admin panel:
+  - Upravljanje lokacij (ime, koda, naslov, hubUrl, hubToken)
+  - Glavna lokacija in Hub (master) oznake
+  - Sinhronizacija s hub-om (push prodaje, izdelkov, premikov, stroškov)
+  - SyncLog zgodovina z statusi (uspeh/napaka/čaka)
+  - Avtomatsko beleženje v audit log
+
+### 📋 Audit log (sledenje akcij)
+- Nov Prisma model: AuditLog (userId, action, entityType, entityId, description, metadata, ipAddress, userAgent)
+- logAudit() helper za beleženje v vseh ključnih API-jih:
+  - Prijava/odjava uporabnikov
+  - Ustvarjanje/posodabljanje/brisanje lokacij
+  - Storno računov
+  - Sinhronizacija s hub-om
+  - Testni email
+- AuditLogTab v admin panel:
+  - Statistika po tipih akcij
+  - Filtri (akcija, tip entitete, datumski obseg)
+  - Barvno kodirani akcije (create=zelena, update=modra, delete=red, storno=oranžna)
+  - Prikaz uporabnika, IP naslova, user-agent, časa
+
+### 📧 Email obvestila (SMTP)
+- Nodemailer integracija z env-based konfiguracijo
+- Email helperji:
+  - sendReservationEmail — potrditev rezervacije stranki
+  - sendLowStockEmail — opozorilo adminu o nizki zalogi
+  - sendDailySummaryEmail — dnevni povzetek poslovanja
+- EmailSettingsTab v admin panel:
+  - SMTP konfiguracija navodila (.env spremenljivke)
+  - Testni email z result feedback
+  - Predlogi uporabe (rezervacije, nizka zaloga, dnevni povzetek, storno)
+- API: POST /api/pos/email/test
+
 ---
 
 ## 🛠 Tehnologije
@@ -518,7 +554,7 @@ NODE_ENV="production"
 
 ## 📅 Fejlendar
 
-### ✅ Opravljeno (v1.3)
+### ✅ Opravljeno (v1.4)
 - [x] Avtentikacija z JWT cookie
 - [x] RBAC (admin/cashier/chef)
 - [x] Katalog izdelkov s kategorijami
@@ -546,13 +582,17 @@ NODE_ENV="production"
 - [x] PDF izvoz poročil (pdfkit, A4 landscape)
 - [x] Rezervacije miz z dashboardom
 - [x] Sledenje delavcev (time tracking z clock in/out)
+- [x] HubSync (sinhronizacija več lokacij)
+- [x] Audit log (sledenje admin akcij)
+- [x] Email obvestila (SMTP z Nodemailer)
 
-### 🔲 Načrtovano (v1.4+)
-- [ ] HubSync (več lokacij)
-- [ ] MailChimp integracija za marketing
+### 🔲 Načrtovano (v1.5+)
 - [ ] SMS obvestila za rezervacije
 - [ ] Mobilna aplikacija (React Native)
 - [ ] Integracija z fiskalnim strojem (Slovenija)
+- [ ] MailChimp integracija za marketing
+- [ ] Spletni modul za stranke (online naročanje)
+- [ ] loyalty program z QR kodami
 
 ---
 
