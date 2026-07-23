@@ -3,7 +3,7 @@
 Sodoben, odprtokodni sistem za upravljanje prodaje (Point of Sale) za restavracije, bife in trgovine. Zgrajen z Next.js 16, Prisma ORM in SQLite.
 
 ![Status](https://img.shields.io/badge/status-aktivni%20razvoj-emerald)
-![Version](https://img.shields.io/badge/version-2.7-blue)
+![Version](https://img.shields.io/badge/version-2.8-blue)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
@@ -332,6 +332,18 @@ POS Blagajna je popoln sistem za upravljanje prodaje z naslednjimi ključnimi la
 - Rate limiting (50ms delay med pošiljanji)
 - Audit log za vsako kampanjo
 - API: POST /api/pos/campaigns
+
+### 🤖 AI chatbot za stranke
+- Interaktivni chatbot na javni strani /menu (ChatbotWidget)
+- Floating gumb z obvestilom (badge)
+- Chat okno z typewriter animacijo (typing dots)
+- Quick questions (hitri gumbi za pogosta vprašanja)
+- Multilingual (SL/EN) glede na jezik strani
+- 10 kategorij odgovorov:
+  - Pozdrav, meni, cene, odpiralni čas, rezervacije
+  - Vegetarijansko, dostava, plačila, kontakt, hvala
+- Context-aware z restavracijskimi podatki (ime, telefon, naslov)
+- API: POST /api/public/chatbot (javni, brez auth)
 
 ---
 
@@ -666,7 +678,7 @@ NODE_ENV="production"
 
 ## 📅 Fejlendar
 
-### ✅ Opravljeno (v2.7) — 65 funkcij
+### ✅ Opravljeno (v2.8) — 68 funkcij
 - [x] Avtentikacija z JWT cookie + RBAC (admin/cashier/chef)
 - [x] 2FA (Two-Factor Authentication) s TOTP in backup kodami
 - [x] Globalni API rate limiting (middleware)
@@ -720,11 +732,13 @@ NODE_ENV="production"
 - [x] Swagger UI (interaktivni API docs)
 - [x] E2E testi (Cypress — 8 test skupin)
 - [x] Database backup/restore (JSON export/import)
+- [x] Automated backup (cron-ready z API ključem)
 - [x] Global error tracking (audit log + Sentry ready)
 - [x] Health endpoint (/api/health)
 - [x] Docker Compose za produkcijo (app + PostgreSQL + nginx + redis)
 - [x] CI/CD Pipeline (GitHub Actions: lint, build, security, docker, deploy)
 - [x] Nginx reverse proxy z rate limiting in SSL ready
+- [x] AI chatbot za stranke (ChatbotWidget na /menu z 10 kategorijami)
 
 ### 🔲 Načrtovano (v2.8+)
 - [ ] Mobilna aplikacija (React Native)

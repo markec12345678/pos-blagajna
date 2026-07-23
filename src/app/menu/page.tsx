@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast'
 import { LanguageSwitcher } from '@/components/pos/LanguageSwitcher'
 import { useI18n } from '@/i18n'
 import { Utensils, Phone, MapPin, Clock, Calendar, Users, ShoppingCart, Plus, ArrowLeft, CheckCircle2, Loader2, CreditCard } from 'lucide-react'
+import { ChatbotWidget } from '@/components/pos/ChatbotWidget'
 
 interface PublicProduct {
   id: string
@@ -303,6 +304,9 @@ export default function MenuPage() {
         restaurantName={restaurant?.name || 'Restavracija'}
         onSuccess={() => setReserveSuccess(true)}
       />
+
+      {/* AI Chatbot */}
+      <ChatbotWidget lang={lang} />
     </div>
   )
 }
