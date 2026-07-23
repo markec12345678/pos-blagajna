@@ -19,7 +19,7 @@
 
 import { createHash, randomBytes } from 'crypto'
 
-export type FiscalCountry = 'SI' | 'HR' | 'NONE'
+export type FiscalCountry = 'SI' | 'HR' | 'AT' | 'IT' | 'NONE'
 
 export interface FiscalConfig {
   country: FiscalCountry
@@ -55,27 +55,17 @@ export function generateZOI(
 
   let concatenated: string
 
-  if (config.country === 'SI') {
-    // Slovenija: davčnaštevilka|datum|št.računa|oznakaProstora|oznakaNaprave|zaporednaŠt
-    concatenated = [
-      config.taxNumber,
-      dateString,
-      invoiceNumber,
-      config.premiseId,
-      config.electronicDeviceId,
-      String(sequence),
-    ].join('')
-  } else {
-    // Hrvaška: OIB|datum|št.računa|oznakaProstora|oznakaNaprave|zaporednaŠt
-    concatenated = [
-      config.taxNumber,
-      dateString,
-      invoiceNumber,
-      config.premiseId,
-      config.electronicDeviceId,
-      String(sequence),
-    ].join('')
-  }
+  // Vse države uporabljajo isto osnovno formulo:
+  // davčnaštevilka|datum|št.računa|oznakaProstora|oznakaNaprave|zaporednaŠt
+  // Razlika je v formatu davčne številke in oznakah
+  concatenated = [
+    config.taxNumber,
+    dateString,
+    invoiceNumber,
+    config.premiseId,
+    config.electronicDeviceId,
+    String(sequence),
+  ].join('')
 
   return createHash('md5').update(concatenated).digest('hex')
 }
@@ -101,9 +91,17 @@ export function generateEOR(): string {
  */
 export function generateFiscalQrData(zoi: string, taxNumber: string, country: FiscalCountry): string {
   if (country === 'SI') {
+    // Slovenija: davčnaštevilka + ZOI
     return `${taxNumber}${zoi}`
   } else if (country === 'HR') {
+    // Hrvaška: ZKI
     return zoi
+  } else if (country === 'AT') {
+    // Avstrija: Belegnummer + UID (RKV-Beleg)
+    return `${taxNumber}${zoi}`
+  } else if (country === 'IT') {
+    // Italija: Numero Documento + Partita IVA (SDI)
+    return `${taxNumber}${zoi}`
   }
   return ''
 }
@@ -169,32 +167,21 @@ export function isFiscalConfigured(): boolean {
  * Vrne labelo za fiskalno oznako glede na državo.
  */
 export function getFiscalLabels(country: FiscalCountry): {
-  zoiLabel: string   // ZOI (SI) ali ZKI (HR)
-  eorLabel: string   // EOR (SI) ali JIR (HR)
+  zoiLabel: string   // ZOI (SI) ali ZKI (HR) ali Belegnummer (AT) ali Numero Documento (IT)
+  eorLabel: string   // EOR (SI) ali JIR (HR) ali Beleg (AT) ali Protocollo (IT)
   qrLabel: string
   countryName: string
 } {
   if (country === 'SI') {
-    return {
-      zoiLabel: 'ZOI',
-      eorLabel: 'EOR',
-      qrLabel: 'QR (FURS)',
-      countryName: 'Slovenija',
-    }
+    return { zoiLabel: 'ZOI', eorLabel: 'EOR', qrLabel: 'QR (FURS)', countryName: 'Slovenija' }
   } else if (country === 'HR') {
-    return {
-      zoiLabel: 'ZKI',
-      eorLabel: 'JIR',
-      qrLabel: 'QR (CIS)',
-      countryName: 'Hrvaška',
-    }
+    return { zoiLabel: 'ZKI', eorLabel: 'JIR', qrLabel: 'QR (CIS)', countryName: 'Hrvaška' }
+  } else if (country === 'AT') {
+    return { zoiLabel: 'Belegnummer', eorLabel: 'Beleg', qrLabel: 'QR (RKV)', countryName: 'Avstrija' }
+  } else if (country === 'IT') {
+    return { zoiLabel: 'Numero Documento', eorLabel: 'Protocollo', qrLabel: 'QR (SDI)', countryName: 'Italija' }
   }
-  return {
-    zoiLabel: 'ZOI',
-    eorLabel: 'EOR',
-    qrLabel: 'QR',
-    countryName: 'Brez fiskalizacije',
-  }
+  return { zoiLabel: 'ZOI', eorLabel: 'EOR', qrLabel: 'QR', countryName: 'Brez fiskalizacije' }
 }
 
 /**
@@ -204,9 +191,10 @@ export function getFiscalLabels(country: FiscalCountry): {
  */
 export function validateTaxNumber(taxNumber: string, country: FiscalCountry): boolean {
   if (country === 'SI') {
+    // SI: 8 mest
     return /^\d{8}$/.test(taxNumber)
   } else if (country === 'HR') {
-    // OIB je 11-mesten in ima modulo 11 kontrolno vsoto
+    // HR: 11 mest (OIB) z modulo 11 kontrolno vsoto
     if (!/^\d{11}$/.test(taxNumber)) return false
     const digits = taxNumber.split('').map(Number)
     let sum = 10
@@ -216,6 +204,24 @@ export function validateTaxNumber(taxNumber: string, country: FiscalCountry): bo
       sum = (sum * 2) % 11
     }
     const controlDigit = (11 - sum) % 10
+    return controlDigit === digits[10]
+  } else if (country === 'AT') {
+    // AT: UID format "U" + 8 mest (npr. U12345678)
+    return /^U\d{8}$/.test(taxNumber)
+  } else if (country === 'IT') {
+    // IT: Partita IVA — 11 mest z kontrolno vsoto
+    if (!/^\d{11}$/.test(taxNumber)) return false
+    const digits = taxNumber.split('').map(Number)
+    let sum = 0
+    for (let i = 0; i < 10; i++) {
+      let d = digits[i]
+      if (i % 2 === 1) {
+        d *= 2
+        if (d > 9) d -= 9
+      }
+      sum += d
+    }
+    const controlDigit = (10 - (sum % 10)) % 10
     return controlDigit === digits[10]
   }
   return true
@@ -229,6 +235,8 @@ export function validateTaxNumber(taxNumber: string, country: FiscalCountry): bo
 export const VAT_RATES: Record<FiscalCountry, { standard: number; reduced: number; low: number }> = {
   SI: { standard: 0.22, reduced: 0.095, low: 0.05 },
   HR: { standard: 0.25, reduced: 0.13, low: 0.05 },
+  AT: { standard: 0.20, reduced: 0.10, low: 0.05 },
+  IT: { standard: 0.22, reduced: 0.10, low: 0.05 },
   NONE: { standard: 0.22, reduced: 0.095, low: 0.05 },
 }
 

@@ -42,6 +42,18 @@ export async function GET() {
           vatRates: '25% (splošna), 13% (znižana), 5% (nizka)',
           notes: 'V produkciji potrebujete FINA certifikat za CIS SOAP API.',
         },
+        AT: {
+          name: 'Avstrija (RKV/Beleg)',
+          envVars: ['FISCAL_COUNTRY=AT', 'FISCAL_TAX_NUMBER=U12345678', 'FISCAL_PREMISE_ID=1', 'FISCAL_DEVICE_ID=POS1'],
+          vatRates: '20% (splošna), 10% (znižana), 5% (nizka)',
+          notes: 'V produkciji potrebujete RKV-Beleg registracijo pri FinanzOnline.',
+        },
+        IT: {
+          name: 'Italija (SDI/FatturaPA)',
+          envVars: ['FISCAL_COUNTRY=IT', 'FISCAL_TAX_NUMBER=12345678901', 'FISCAL_PREMISE_ID=1', 'FISCAL_DEVICE_ID=POS1'],
+          vatRates: '22% (splošna), 10% (znižana), 5% (nizka)',
+          notes: 'V produkciji potrebujete SDI certifikat za FatturaPA XML.',
+        },
       },
     })
   } catch (e: any) {
