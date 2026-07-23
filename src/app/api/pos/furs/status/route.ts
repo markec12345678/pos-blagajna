@@ -54,6 +54,18 @@ export async function GET() {
           vatRates: '22% (splošna), 10% (znižana), 5% (nizka)',
           notes: 'V produkciji potrebujete SDI certifikat za FatturaPA XML.',
         },
+        DE: {
+          name: 'Nemčija (TSE/DSFinV-K)',
+          envVars: ['FISCAL_COUNTRY=DE', 'FISCAL_TAX_NUMBER=12345678901', 'FISCAL_PREMISE_ID=1', 'FISCAL_DEVICE_ID=POS1'],
+          vatRates: '19% (splošna), 7% (znižana), 5% (nizka)',
+          notes: 'V produkciji potrebujete TSE (Technische Sicherheitseinrichtung) modul.',
+        },
+        HU: {
+          name: 'Madžarska (NAV/Online Számla)',
+          envVars: ['FISCAL_COUNTRY=HU', 'FISCAL_TAX_NUMBER=12345678-2-01', 'FISCAL_PREMISE_ID=1', 'FISCAL_DEVICE_ID=POS1'],
+          vatRates: '27% (splošna), 18% (znižana), 5% (nizka)',
+          notes: 'V produkciji potrebujete NAV (National Tax Authority) XML API.',
+        },
       },
     })
   } catch (e: any) {

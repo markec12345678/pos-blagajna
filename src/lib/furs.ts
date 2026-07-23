@@ -19,7 +19,7 @@
 
 import { createHash, randomBytes } from 'crypto'
 
-export type FiscalCountry = 'SI' | 'HR' | 'AT' | 'IT' | 'NONE'
+export type FiscalCountry = 'SI' | 'HR' | 'AT' | 'IT' | 'DE' | 'HU' | 'NONE'
 
 export interface FiscalConfig {
   country: FiscalCountry
@@ -97,10 +97,12 @@ export function generateFiscalQrData(zoi: string, taxNumber: string, country: Fi
     // Hrvaška: ZKI
     return zoi
   } else if (country === 'AT') {
-    // Avstrija: Belegnummer + UID (RKV-Beleg)
     return `${taxNumber}${zoi}`
   } else if (country === 'IT') {
-    // Italija: Numero Documento + Partita IVA (SDI)
+    return `${taxNumber}${zoi}`
+  } else if (country === 'DE') {
+    return `${taxNumber}${zoi}`
+  } else if (country === 'HU') {
     return `${taxNumber}${zoi}`
   }
   return ''
@@ -180,6 +182,10 @@ export function getFiscalLabels(country: FiscalCountry): {
     return { zoiLabel: 'Belegnummer', eorLabel: 'Beleg', qrLabel: 'QR (RKV)', countryName: 'Avstrija' }
   } else if (country === 'IT') {
     return { zoiLabel: 'Numero Documento', eorLabel: 'Protocollo', qrLabel: 'QR (SDI)', countryName: 'Italija' }
+  } else if (country === 'DE') {
+    return { zoiLabel: 'Belegnummer', eorLabel: 'TSE-Transaktion', qrLabel: 'QR (TSE)', countryName: 'Nemčija' }
+  } else if (country === 'HU') {
+    return { zoiLabel: 'Számlaszám', eorLabel: 'NAV Azonosító', qrLabel: 'QR (NAV)', countryName: 'Madžarska' }
   }
   return { zoiLabel: 'ZOI', eorLabel: 'EOR', qrLabel: 'QR', countryName: 'Brez fiskalizacije' }
 }
@@ -209,20 +215,22 @@ export function validateTaxNumber(taxNumber: string, country: FiscalCountry): bo
     // AT: UID format "U" + 8 mest (npr. U12345678)
     return /^U\d{8}$/.test(taxNumber)
   } else if (country === 'IT') {
-    // IT: Partita IVA — 11 mest z kontrolno vsoto
+    // IT: Partita IVA — 11 mest z Luhn kontrolo
     if (!/^\d{11}$/.test(taxNumber)) return false
     const digits = taxNumber.split('').map(Number)
     let sum = 0
     for (let i = 0; i < 10; i++) {
       let d = digits[i]
-      if (i % 2 === 1) {
-        d *= 2
-        if (d > 9) d -= 9
-      }
+      if (i % 2 === 1) { d *= 2; if (d > 9) d -= 9 }
       sum += d
     }
-    const controlDigit = (10 - (sum % 10)) % 10
-    return controlDigit === digits[10]
+    return (10 - (sum % 10)) % 10 === digits[10]
+  } else if (country === 'DE') {
+    // DE: Steuernummer — 11 mest (npr. 1234567890)
+    return /^\d{11}$/.test(taxNumber)
+  } else if (country === 'HU') {
+    // HU: Adószám — 8 mest + regio (npr. 12345678-2-01)
+    return /^\d{8}-\d-\d{2}$/.test(taxNumber)
   }
   return true
 }
@@ -237,6 +245,8 @@ export const VAT_RATES: Record<FiscalCountry, { standard: number; reduced: numbe
   HR: { standard: 0.25, reduced: 0.13, low: 0.05 },
   AT: { standard: 0.20, reduced: 0.10, low: 0.05 },
   IT: { standard: 0.22, reduced: 0.10, low: 0.05 },
+  DE: { standard: 0.19, reduced: 0.07, low: 0.05 },
+  HU: { standard: 0.27, reduced: 0.18, low: 0.05 },
   NONE: { standard: 0.22, reduced: 0.095, low: 0.05 },
 }
 

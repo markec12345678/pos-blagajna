@@ -3,12 +3,12 @@
 Sodoben, odprtokodni sistem za upravljanje prodaje (Point of Sale) za restavracije, bife in trgovine. Zgrajen z Next.js 16, Prisma ORM in SQLite.
 
 ![Status](https://img.shields.io/badge/status-aktivni%20razvoj-emerald)
-![Version](https://img.shields.io/badge/version-2.8-blue)
+![Version](https://img.shields.io/badge/version-2.9-blue)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
 ![Prisma](https://img.shields.io/badge/Prisma-ORM-indigo)
-![Fiscal](https://img.shields.io/badge/fiskalizacija-SI%20%7C%20HR%20%7C%20AT%20%7C%20IT-success)
+![Fiscal](https://img.shields.io/badge/fiskalizacija-SI%20%7C%20HR%20%7C%20AT%20%7C%20IT%20%7C%20DE%20%7C%20HU-success)
 
 ---
 
@@ -678,7 +678,7 @@ NODE_ENV="production"
 
 ## 📅 Fejlendar
 
-### ✅ Opravljeno (v2.8) — 68 funkcij
+### ✅ Opravljeno (v2.9) — 72 funkcij
 - [x] Avtentikacija z JWT cookie + RBAC (admin/cashier/chef)
 - [x] 2FA (Two-Factor Authentication) s TOTP in backup kodami
 - [x] Globalni API rate limiting (middleware)
@@ -739,8 +739,12 @@ NODE_ENV="production"
 - [x] CI/CD Pipeline (GitHub Actions: lint, build, security, docker, deploy)
 - [x] Nginx reverse proxy z rate limiting in SSL ready
 - [x] AI chatbot za stranke (ChatbotWidget na /menu z 10 kategorijami)
+- [x] Fiskalizacija — Nemčija (TSE): Belegnummer, TSE-Transaktion, DDV 19/7/5%
+- [x] Fiskalizacija — Madžarska (NAV): Számlaszám, NAV Azonosító, DDV 27/18/5%
+- [x] Performance monitoring (memory, uptime, DB metrike, feature status)
+- [x] Stripe billing webhook (subscription lifecycle)
 
-### 🔲 Načrtovano (v2.8+)
+### 🔲 Načrtovano (v3.0+)
 - [ ] Mobilna aplikacija (React Native)
 - [ ] Real FURS/CIS/RKV/SDI SOAP integracija s certifikati
 - [ ] Sentry integracija za error tracking
