@@ -3,10 +3,12 @@
 Sodoben, odprtokodni sistem za upravljanje prodaje (Point of Sale) za restavracije, bife in trgovine. Zgrajen z Next.js 16, Prisma ORM in SQLite.
 
 ![Status](https://img.shields.io/badge/status-aktivni%20razvoj-emerald)
+![Version](https://img.shields.io/badge/version-2.7-blue)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
 ![Prisma](https://img.shields.io/badge/Prisma-ORM-indigo)
+![Fiscal](https://img.shields.io/badge/fiskalizacija-SI%20%7C%20HR%20%7C%20AT%20%7C%20IT-success)
 
 ---
 
@@ -339,14 +341,27 @@ POS Blagajna je popoln sistem za upravljanje prodaje z naslednjimi ključnimi la
 |---|---|---|
 | **Framework** | Next.js (App Router) | 16 |
 | **Jezik** | TypeScript | 5 |
-| **Podatkovna baza** | SQLite (preko Prisma) | — |
+| **Podatkovna baza** | SQLite (dev) / PostgreSQL (prod) | — |
 | **ORM** | Prisma Client | 6.x |
 | **Styling** | Tailwind CSS | 4 |
 | **UI komponente** | shadcn/ui (New York) | — |
 | **Ikone** | Lucide React | — |
-| **Avtentikacija** | bcryptjs + HMAC-SHA256 | — |
-| **Real-time** | Socket.io (načrtovano) | — |
-| **Validacija** | Zod (načrtovano) | — |
+| **Avtentikacija** | bcryptjs + HMAC-SHA256 + 2FA (otplib) | — |
+| **Real-time** | Socket.io (mini-service) | — |
+| **Tiskalnik** | ESC/POS (WebUSB + TCP socket) | — |
+| **PWA** | Service Worker + manifest | — |
+| **PDF** | pdfkit | — |
+| **Email** | Nodemailer (SMTP) | — |
+| **SMS** | Twilio | — |
+| **Plačila** | Stripe (Checkout + Subscriptions + Webhooks) | — |
+| **QR kode** | qrcode | — |
+| **Marketinška** | MailChimp API v3 | — |
+| **Grafikoni** | Chart.js + react-chartjs-2 | — |
+| **E2E testi** | Cypress | — |
+| **Infrastruktura** | Docker Compose + Nginx + Redis | — |
+| **CI/CD** | GitHub Actions (lint, build, security, docker) | — |
+| **API docs** | OpenAPI 3.0 + Swagger UI | — |
+| **Fiskalizacija** | SI (FURS), HR (CIS), AT (RKV), IT (SDI) | — |
 
 ---
 
@@ -651,54 +666,75 @@ NODE_ENV="production"
 
 ## 📅 Fejlendar
 
-### ✅ Opravljeno (v1.8)
-- [x] Avtentikacija z JWT cookie
-- [x] RBAC (admin/cashier/chef)
-- [x] Katalog izdelkov s kategorijami
-- [x] Blagajna s checkout in DDV
-- [x] Naročila z stanji
+### ✅ Opravljeno (v2.7) — 65 funkcij
+- [x] Avtentikacija z JWT cookie + RBAC (admin/cashier/chef)
+- [x] 2FA (Two-Factor Authentication) s TOTP in backup kodami
+- [x] Globalni API rate limiting (middleware)
+- [x] Katalog izdelkov s kategorijami in barkodnim bralnikom
+- [x] Blagajna s checkout, DDV, popusti, napitninami
+- [x] Naročila z stanji + mize z območji
 - [x] Kitchen Display System (KDS) z WebSocket real-time
-- [x] Mize z območji
-- [x] Skladišče (sprejem, odpisi)
-- [x] Stroški
-- [x] Kupci z loyalty
-- [x] Nastavitve
-- [x] Poročila in dashboard
-- [x] Napitnine
-- [x] Popusti
-- [x] Račun z izpisom in tiskanjem
-- [x] Zgodovina prodaje
-- [x] WebSocket za real-time KDS
-- [x] Storno/refund računov
-- [x] Barkodni bralnik podpora
-- [x] Večjezikovnost (SL/EN/IT)
-- [x] ESC/POS tiskalnik (USB + TCP/IP + brskalnik)
-- [x] Nastavitve tiskalnika v admin panelu
-- [x] PWA offline mode
+- [x] Storno/refund računov z vračilom zalog
+- [x] Skladišče (sprejem, odpisi, adjustacije, opozorila)
+- [x] Stroški (5 kategorij, filtriranje)
+- [x] Kupci z loyalty točkami, segmenti, rojstnimi dnevi
+- [x] CRM modul (interakcije, dashboard z vizualizacijami)
+- [x] Nastavitve (restavracija, VAT, račun, tiskalnik)
+- [x] Poročila in dashboard z grafikoni (Chart.js)
+- [x] AI napoved prodaje (7-dnevna, trend, insights)
+- [x] AI napoved povpraševanja po izdelkih
+- [x] AI priporočila za up-selling (pogosto kupljeno skupaj)
+- [x] Napredna analitika (heatmap, basket analysis, trendi)
+- [x] Rezervacije miz z dashboardom (javne + interne)
+- [x] Sledenje delavcev (time tracking z clock in/out)
+- [x] Urnik zaposlenih (shift scheduling)
+- [x] Spletni portal za zaposlene (/portal)
+- [x] Večjezikovnost (SL/EN/IT) z avto-detekcijo
+- [x] ESC/POS tiskalnik (USB WebUSB + TCP/IP + brskalnik)
+- [x] Nastavitve tiskalnika v admin panelu (3 načini)
+- [x] PWA offline mode z service workerjem
 - [x] CSV izvoz poročil (prodaja, stroški)
 - [x] PDF izvoz poročil (pdfkit, A4 landscape)
-- [x] Rezervacije miz z dashboardom
-- [x] Sledenje delavcev (time tracking z clock in/out)
 - [x] HubSync (sinhronizacija več lokacij)
-- [x] Audit log (sledenje admin akcij)
+- [x] Audit log (sledenje vseh admin akcij)
 - [x] Email obvestila (SMTP z Nodemailer)
+- [x] Email kampanje (newsletter sistem z personalizacijo)
+- [x] SMS obvestila (Twilio)
+- [x] MailChimp integracija (sinhronizacija kupcev)
 - [x] Javni spletni meni (/menu) za stranke
 - [x] QR loyalty sistem (generiranje + scan)
-- [x] Real-time dashboard z grafikoni (Chart.js)
-- [x] SMS obvestila (Twilio)
 - [x] Online plačila (Stripe) z Checkout UI
-- [x] CRM modul (interakcije, segmenti, birthday)
+- [x] Stripe Webhooks (payment events, refunds, disputes)
+- [x] Produktni modifikatorji (addon, removal, size, custom)
 - [x] Performance optimizacije (DB indeksi)
-- [x] CRM Dashboard z vizualizacijami (segmenti, top kupci, interakcije)
-- [x] AI priporočila za up-selling (pogosto kupljeno skupaj)
-- [x] Email kampanje (newsletter sistem)
+- [x] Fiskalizacija — Slovenija (FURS): ZOI, EOR, QR
+- [x] Fiskalizacija — Hrvaška (CIS/FINA): ZKI, JIR, QR
+- [x] Fiskalizacija — Avstrija (RKV/Beleg): Belegnummer, Beleg
+- [x] Fiskalizacija — Italija (SDI/FatturaPA): Numero Doc, Protocollo
+- [x] Multi-country DDV stopnje (SI: 22/9.5/5%, HR: 25/13/5%, AT: 20/10/5%, IT: 22/10/5%)
+- [x] Validacija davčnih številk (SI: 8 mest, HR: OIB mod 11, AT: UID, IT: PIVA Luhn)
+- [x] Multi-tenant arhitektura (SaaS model)
+- [x] Billing (Stripe Subscriptions) — Starter/Pro/Enterprise
+- [x] White-label (custom branding, logo, barva, domena)
+- [x] OpenAPI 3.0 dokumentacija (46 poti, 26 tagov)
+- [x] Swagger UI (interaktivni API docs)
+- [x] E2E testi (Cypress — 8 test skupin)
+- [x] Database backup/restore (JSON export/import)
+- [x] Global error tracking (audit log + Sentry ready)
+- [x] Health endpoint (/api/health)
+- [x] Docker Compose za produkcijo (app + PostgreSQL + nginx + redis)
+- [x] CI/CD Pipeline (GitHub Actions: lint, build, security, docker, deploy)
+- [x] Nginx reverse proxy z rate limiting in SSL ready
 
-### 🔲 Načrtovano (v1.9+)
+### 🔲 Načrtovano (v2.8+)
 - [ ] Mobilna aplikacija (React Native)
-- [ ] Integracija z fiskalnim strojem (Slovenija)
-- [ ] MailChimp integracija za marketing
-- [ ] Napredna AI analitika (napoved prodaje)
-- [ ] Spletni modul za zaposlene (urniki)
+- [ ] Real FURS/CIS/RKV/SDI SOAP integracija s certifikati
+- [ ] Sentry integracija za error tracking
+- [ ] Automated backup (cron job)
+- [ ] Kubernetes deployment
+- [ ] Dodatne države (Nemčija, Madžarska)
+- [ ] Spletni modul za zaposlene (urniki za mobilne naprave)
+- [ ] AI chatbot za stranke
 
 ---
 
